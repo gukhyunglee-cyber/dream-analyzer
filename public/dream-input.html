@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>새 꿈 기록 - 꿈 분석기</title>
+    <link rel="stylesheet" href="/styles/main.css">
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/dashboard.html" class="navbar-brand">🌙 꿈 분석기</a>
+            <ul class="navbar-nav">
+                <li><a href="/dashboard.html" class="navbar-link">대시보드</a></li>
+                <li><a href="/dream-journal.html" class="navbar-link">꿈 일지</a></li>
+                <li><a href="#" class="navbar-link" onclick="logout()">로그아웃</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container-narrow" style="margin-top: 2rem;">
+        <h1 class="mb-lg">✨ 새 꿈 기록</h1>
+
+        <div class="card card-premium">
+            <form onsubmit="handleDreamSubmission(event)">
+                <div class="form-group">
+                    <label class="form-label" for="dreamDate">날짜</label>
+                    <input type="date" id="dreamDate" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="dreamTitle">꿈 제목</label>
+                    <input type="text" id="dreamTitle" class="form-input" placeholder="예: 바다를 건너는 꿈" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="dreamContent">꿈 내용</label>
+                    <textarea id="dreamContent" class="form-textarea"
+                        placeholder="가능한 한 상세하게 꿈의 내용을 기록하세요. 등장인물, 장소, 감정, 상징적 요소들을 모두 포함해주세요..." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">감정 태그 (선택사항)</label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;">
+                        <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer;">
+                            <input type="checkbox" value="기쁨" name="emotions"> 기쁨
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer;">
+                            <input type="checkbox" value="슬픔" name="emotions"> 슬픔
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer;">
+                            <input type="checkbox" value="두려움" name="emotions"> 두려움
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer;">
+                            <input type="checkbox" value="분노" name="emotions"> 분노
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer;">
+                            <input type="checkbox" value="불안" name="emotions"> 불안
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer;">
+                            <input type="checkbox" value="평온" name="emotions"> 평온
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer;">
+                            <input type="checkbox" value="혼란" name="emotions"> 혼란
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer;">
+                            <input type="checkbox" value="희망" name="emotions"> 희망
+                        </label>
+                    </div>
+                </div>
+
+                <div id="submitError" class="hidden" style="color: var(--color-error); margin-bottom: 1rem;"></div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-accent" style="flex: 1;">💾 저장하기</button>
+                    <button type="button" class="btn btn-outline"
+                        onclick="window.location.href='/dashboard.html'">취소</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+    <script>
+        // Check authentication
+        if (!isAuthenticated()) {
+            window.location.href = '/auth.html';
+        }
+
+        // Set default date to today
+        document.getElementById('dreamDate').valueAsDate = new Date();
+
+        // Handle form submission
+        async function handleDreamSubmission(event) {
+            event.preventDefault();
+
+            const date = document.getElementById('dreamDate').value;
+            const title = document.getElementById('dreamTitle').value;
+            const content = document.getElementById('dreamContent').value;
+
+            // Get selected emotions
+            const emotionCheckboxes = document.querySelectorAll('input[name="emotions"]:checked');
+            const emotions = Array.from(emotionCheckboxes).map(cb => cb.value);
+
+            const errorDiv = document.getElementById('submitError');
+            const submitButton = event.target.querySelector('button[type="submit"]');
+
+            try {
+                submitButton.disabled = true;
+                submitButton.textContent = '저장 중...';
+
+                const response = await authenticatedFetch(`${API_URL}/dreams`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        date,
+                        title,
+                        content,
+                        emotions
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || '꿈 저장에 실패했습니다');
+                }
+
+                // Ask if user wants to analyze the dream
+                const analyze = confirm('꿈이 저장되었습니다! 지금 바로 AI 분석을 받으시겠습니까?');
+
+                if (analyze) {
+                    // Redirect to analysis
+                    window.location.href = `/analysis-result.html?dreamId=${data.dreamId}&analyze=true`;
+                } else {
+                    // Redirect to dashboard
+                    window.location.href = '/dashboard.html';
+                }
+
+            } catch (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.classList.remove('hidden');
+                submitButton.disabled = false;
+                submitButton.textContent = '💾 저장하기';
+            }
+        }
+    </script>
+</body>
+
+</html>

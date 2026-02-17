@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>꿈 분석 결과 - 꿈 분석기</title>
+    <link rel="stylesheet" href="/styles/main.css">
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/dashboard.html" class="navbar-brand">🌙 꿈 분석기</a>
+            <ul class="navbar-nav">
+                <li><a href="/dashboard.html" class="navbar-link">대시보드</a></li>
+                <li><a href="/dream-journal.html" class="navbar-link">꿈 일지</a></li>
+                <li><a href="#" class="navbar-link" onclick="logout()">로그아웃</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container" style="margin-top: 2rem;">
+        <h1 class="mb-lg">🔮 꿈 분석 결과</h1>
+
+        <!-- Dream Info -->
+        <div id="dreamInfo" class="card mb-lg"></div>
+
+        <!-- Analysis Section -->
+        <div id="analysisSection"></div>
+
+        <!-- Actions -->
+        <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+            <button onclick="window.location.href='/dashboard.html'" class="btn btn-outline">대시보드로 돌아가기</button>
+            <button onclick="window.location.href='/dream-journal.html'" class="btn btn-primary">꿈 일지 보기</button>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+    <script>
+        // Check authentication
+        if (!isAuthenticated()) {
+            window.location.href = '/auth.html';
+        }
+
+        // Get dream ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const dreamId = urlParams.get('dreamId');
+        const shouldAnalyze = urlParams.get('analyze') === 'true';
+
+        if (!dreamId) {
+            window.location.href = '/dashboard.html';
+        }
+
+        let currentDream = null;
+
+        // Load dream details
+        async function loadDreamDetails() {
+            showLoading('dreamInfo');
+
+            try {
+                const response = await authenticatedFetch(`${API_URL}/dreams/${dreamId}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || '꿈 정보를 불러올 수 없습니다');
+                }
+
+                currentDream = data.dream;
+
+                // Display dream info
+                document.getElementById('dreamInfo').innerHTML = `
+          <h2>${currentDream.title}</h2>
+          <p class="text-muted mb-md">${formatDate(currentDream.date)}</p>
+          <p>${currentDream.content}</p>
+          ${currentDream.emotions && currentDream.emotions.length > 0 ? `
+            <div style="margin-top: 1rem;">
+              <strong>감정:</strong>
+              ${currentDream.emotions.map(e => `<span style="background: var(--color-primary-light); padding: 0.25rem 0.75rem; border-radius: 1rem; margin-right: 0.5rem; font-size: 0.9rem;">${e}</span>`).join('')}
+            </div>
+          ` : ''}
+        `;
+
+                // Load or perform analysis
+                if (shouldAnalyze) {
+                    await performAnalysis();
+                } else {
+                    await loadExistingAnalysis();
+                }
+
+            } catch (error) {
+                showError('dreamInfo', error.message);
+            }
+        }
+
+        // Perform new analysis
+        async function performAnalysis() {
+            const analysisSection = document.getElementById('analysisSection');
+            analysisSection.innerHTML = `
+        <div class="card card-premium">
+          <h3 style="text-align: center;">🧠 AI가 꿈을 분석하고 있습니다...</h3>
+          <div class="loading" style="height: 200px; margin-top: 1rem;"></div>
+          <p class="text-center text-muted" style="margin-top: 1rem;">융 이론을 바탕으로 깊이 있는 분석을 진행 중입니다. 잠시만 기다려주세요.</p>
+        </div>
+      `;
+
+            try {
+                const response = await authenticatedFetch(`${API_URL}/analysis/analyze`, {
+                    method: 'POST',
+                    body: JSON.stringify({ dreamId })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || '분석에 실패했습니다');
+                }
+
+                displayAnalysis(data.analysis);
+
+            } catch (error) {
+                analysisSection.innerHTML = `
+          <div class="card" style="background: rgba(255, 82, 82, 0.1); border-color: var(--color-error);">
+            <h3 style="color: var(--color-error);">⚠️ 분석 실패</h3>
+            <p>${error.message}</p>
+            <button onclick="performAnalysis()" class="btn btn-primary mt-md">다시 시도</button>
+          </div>
+        `;
+            }
+        }
+
+        // Load existing analysis
+        async function loadExistingAnalysis() {
+            const analysisSection = document.getElementById('analysisSection');
+
+            try {
+                const response = await authenticatedFetch(`${API_URL}/analysis/${dreamId}`);
+
+                if (!response.ok) {
+                    // No analysis exists, offer to create one
+                    analysisSection.innerHTML = `
+            <div class="card text-center">
+              <h3>이 꿈은 아직 분석되지 않았습니다</h3>
+              <p class="text-muted">AI를 통해 융 이론 기반의 깊이 있는 분석을 받아보세요</p>
+              <button onclick="performAnalysis()" class="btn btn-accent mt-md">지금 분석하기</button>
+            </div>
+          `;
+                    return;
+                }
+
+                const data = await response.json();
+                displayAnalysis(data.analysis);
+
+            } catch (error) {
+                analysisSection.innerHTML = `
+          <div class="card text-center">
+            <h3>이 꿈은 아직 분석되지 않았습니다</h3>
+            <p class="text-muted">AI를 통해 융 이론 기반의 깊이 있는 분석을 받아보세요</p>
+            <button onclick="performAnalysis()" class="btn btn-accent mt-md">지금 분석하기</button>
+          </div>
+        `;
+            }
+        }
+
+        // Display analysis results
+        function displayAnalysis(analysis) {
+            const analysisSection = document.getElementById('analysisSection');
+
+            analysisSection.innerHTML = `
+        <!-- Overall Interpretation -->
+        <div class="card card-premium mb-lg fade-in">
+          <h2 style="color: var(--color-accent); margin-bottom: 1rem;">전체 해석</h2>
+          <p style="line-height: 1.8; font-size: 1.05rem;">${analysis.overall_interpretation || analysis.analysis_text || '분석 내용이 없습니다.'}</p>
+        </div>
+
+        <!-- Archetypes -->
+        ${analysis.archetypes && analysis.archetypes.length > 0 ? `
+          <div class="card mb-lg fade-in" style="animation-delay: 0.2s;">
+            <h2 style="color: var(--color-primary-light); margin-bottom: 1rem;">🎭 발견된 원형 (Archetypes)</h2>
+            <ul style="list-style: none; padding: 0;">
+              ${analysis.archetypes.map(archetype => `
+                <li style="background: var(--color-surface-light); padding: 1rem; border-radius: var(--radius-sm); margin-bottom: 0.5rem;">
+                  ${archetype}
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        ` : ''}
+
+        <!-- Symbols -->
+        ${analysis.symbols && Object.keys(analysis.symbols).length > 0 ? `
+          <div class="card mb-lg fade-in" style="animation-delay: 0.4s;">
+            <h2 style="color: var(--color-accent-light); margin-bottom: 1rem;">✨ 상징과 의미</h2>
+            <div style="display: grid; gap: 1rem;">
+              ${Object.entries(analysis.symbols).map(([symbol, meaning]) => `
+                <div style="background: var(--color-surface-light); padding: 1rem; border-radius: var(--radius-sm);">
+                  <h4 style="color: var(--color-accent); margin-bottom: 0.5rem;">${symbol}</h4>
+                  <p style="margin: 0;">${meaning}</p>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- Psychological State -->
+        ${analysis.psychological_state ? `
+          <div class="card mb-lg fade-in" style="animation-delay: 0.6s;">
+            <h2 style="color: var(--color-secondary-light); margin-bottom: 1rem;">💭 현재 심리 상태</h2>
+            <p style="line-height: 1.8;">${analysis.psychological_state}</p>
+          </div>
+        ` : ''}
+
+        <!-- Individuation Insights -->
+        ${analysis.individuation_insights ? `
+          <div class="card mb-lg fade-in" style="animation-delay: 0.8s;">
+            <h2 style="color: var(--color-accent); margin-bottom: 1rem;">🌟 개성화 과정 인사이트</h2>
+            <p style="line-height: 1.8;">${analysis.individuation_insights}</p>
+          </div>
+        ` : ''}
+
+        <!-- Recommendations -->
+        ${analysis.recommendations ? `
+          <div class="card card-premium fade-in" style="animation-delay: 1s;">
+            <h2 style="color: var(--color-accent-light); margin-bottom: 1rem;">💡 성찰을 위한 제안</h2>
+            <p style="line-height: 1.8;">${analysis.recommendations}</p>
+          </div>
+        ` : ''}
+      `;
+        }
+
+        // Load dream on page load
+        loadDreamDetails();
+    </script>
+</body>
+
+</html>

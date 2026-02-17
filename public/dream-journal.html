@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>꿈 일지 - 꿈 분석기</title>
+    <link rel="stylesheet" href="/styles/main.css">
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/dashboard.html" class="navbar-brand">🌙 꿈 분석기</a>
+            <ul class="navbar-nav">
+                <li><a href="/dashboard.html" class="navbar-link">대시보드</a></li>
+                <li><a href="/dream-journal.html" class="navbar-link">꿈 일지</a></li>
+                <li><a href="#" class="navbar-link" onclick="logout()">로그아웃</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container" style="margin-top: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h1>📖 꿈 일지</h1>
+            <a href="/dream-input.html" class="btn btn-accent">+ 새 꿈 기록</a>
+        </div>
+
+        <!-- Filters -->
+        <div class="card mb-lg" style="padding: 1rem;">
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                <div>
+                    <label class="form-label" style="margin-bottom: 0.25rem; font-size: 0.9rem;">정렬</label>
+                    <select id="sortOrder" class="form-select" onchange="loadDreams()" style="padding: 0.5rem;">
+                        <option value="date_desc">최신순</option>
+                        <option value="date_asc">오래된 순</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dreams List -->
+        <div id="dreamsList"></div>
+    </div>
+
+    <script src="/js/app.js"></script>
+    <script>
+        // Check authentication
+        if (!isAuthenticated()) {
+            window.location.href = '/auth.html';
+        }
+
+        // Load all dreams
+        async function loadDreams() {
+            const listElement = document.getElementById('dreamsList');
+            const sortOrder = document.getElementById('sortOrder').value;
+
+            showLoading('dreamsList');
+
+            try {
+                const response = await authenticatedFetch(`${API_URL}/dreams`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || '꿈 목록을 불러올 수 없습니다');
+                }
+
+                let dreams = data.dreams;
+
+                // Apply sorting
+                if (sortOrder === 'date_asc') {
+                    dreams = dreams.reverse();
+                }
+
+                if (dreams.length === 0) {
+                    listElement.innerHTML = `
+            <div class="card text-center">
+              <div style="font-size: 4rem; margin-bottom: 1rem;">🌙</div>
+              <h2>아직 기록된 꿈이 없습니다</h2>
+              <p class="text-muted mb-md">첫 번째 꿈을 기록하고 무의식의 메시지를 발견하세요</p>
+              <a href="/dream-input.html" class="btn btn-accent">첫 꿈 기록하기</a>
+            </div>
+          `;
+                    return;
+                }
+
+                // Display dreams
+                listElement.innerHTML = dreams.map(dream => `
+          <div class="card fade-in" style="margin-bottom: 1.5rem; cursor: pointer;" onclick="viewDream(${dream.id})">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+              <h3 style="margin: 0;">${dream.title}</h3>
+              <button onclick="event.stopPropagation(); deleteDream(${dream.id}, '${dream.title}')" class="btn" style="background: var(--color-error); color: white; padding: 0.5rem 1rem; font-size: 0.85rem;">삭제</button>
+            </div>
+            
+            <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 1rem;">
+              📅 ${formatDate(dream.date)}
+            </p>
+            
+            <p style="color: var(--color-text-secondary); margin-bottom: 1rem; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
+              ${dream.content}
+            </p>
+            
+            ${dream.emotions && dream.emotions.length > 0 ? `
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                ${dream.emotions.map(e => `
+                  <span style="background: var(--color-primary-light); padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.85rem;">${e}</span>
+                `).join('')}
+              </div>
+            ` : ''}
+            
+            <div style="padding-top: 1rem; border-top: 1px solid var(--glass-border);">
+              <span style="color: var(--color-accent); font-weight: 500;">자세히 보기 →</span>
+            </div>
+          </div>
+        `).join('');
+
+            } catch (error) {
+                showError('dreamsList', error.message);
+            }
+        }
+
+        // View dream details
+        function viewDream(dreamId) {
+            window.location.href = `/analysis-result.html?dreamId=${dreamId}`;
+        }
+
+        // Delete dream
+        async function deleteDream(dreamId, title) {
+            if (!confirm(`정말로 "${title}" 꿈을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) {
+                return;
+            }
+
+            try {
+                const response = await authenticatedFetch(`${API_URL}/dreams/${dreamId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || '삭제에 실패했습니다');
+                }
+
+                alert('꿈이 삭제되었습니다.');
+                loadDreams(); // Reload the list
+
+            } catch (error) {
+                alert('삭제 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+
+        // Load dreams on page load
+        loadDreams();
+    </script>
+</body>
+
+</html>
