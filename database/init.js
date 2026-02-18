@@ -39,7 +39,8 @@ async function initDatabase() {
                 title TEXT NOT NULL,
                 content TEXT NOT NULL,
                 emotions TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )` :
       `CREATE TABLE IF NOT EXISTS dreams (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -49,10 +50,20 @@ async function initDatabase() {
                 content TEXT NOT NULL,
                 emotions TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )`;
 
     await db.query(dreamSchema);
+
+    // Migration: Add updated_at column if it doesn't exist
+    try {
+      await db.query(`ALTER TABLE dreams ADD COLUMN updated_at ${isPg ? 'TIMESTAMP' : 'DATETIME'} DEFAULT CURRENT_TIMESTAMP`);
+      console.log('Added updated_at column to dreams table');
+    } catch (err) {
+      // Column likely exists, ignore
+    }
+
     console.log('Dreams table ready');
 
     // Analyses Table
