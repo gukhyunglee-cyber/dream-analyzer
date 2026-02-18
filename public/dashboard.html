@@ -95,7 +95,7 @@
                 // Display recent dreams (limit to 5)
                 const recentDreams = data.dreams.slice(0, 5);
                 listElement.innerHTML = recentDreams.map(dream => `
-          <div class="card" style="margin-bottom: 1rem; cursor: pointer;" onclick="window.location.href='/dream-detail.html?id=${dream.id}'">
+          <div class="card" style="margin-bottom: 1rem; cursor: pointer;" onclick="window.location.href='/analysis-result.html?dreamId=${dream.id}'">
             <h3 style="margin-bottom: 0.5rem;">${dream.title}</h3>
             <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 0.5rem;">${formatDate(dream.date)}</p>
             <p style="color: var(--color-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
