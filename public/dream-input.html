@@ -180,8 +180,12 @@
                 }
 
                 if (isEditMode) {
-                    alert('수정이 완료되었습니다!');
-                    window.location.href = `/analysis-result.html?dreamId=${dreamId}`;
+                    const reanalyze = confirm('수정이 완료되었습니다! 변경된 내용으로 다시 분석하시겠습니까?');
+                    if (reanalyze) {
+                        window.location.href = `/analysis-result.html?dreamId=${dreamId}&analyze=true`;
+                    } else {
+                        window.location.href = `/analysis-result.html?dreamId=${dreamId}`;
+                    }
                 } else {
                     // Ask if user wants to analyze the dream
                     const analyze = confirm('꿈이 저장되었습니다! 지금 바로 AI 분석을 받으시겠습니까?');
