@@ -90,8 +90,56 @@
             window.location.href = '/auth.html';
         }
 
-        // Set default date to today
-        document.getElementById('dreamDate').valueAsDate = new Date();
+        // Get dream ID from URL for edit mode
+        const urlParams = new URLSearchParams(window.location.search);
+        const dreamId = urlParams.get('dreamId');
+        const isEditMode = !!dreamId;
+
+        const pageTitle = document.querySelector('h1.mb-lg');
+        const submitBtn = document.querySelector('button[type="submit"]');
+
+        // Initialize page
+        async function initPage() {
+            if (isEditMode) {
+                // Edit Mode Setup
+                document.title = '꿈 수정 - 꿈 분석기';
+                pageTitle.textContent = '✏️ 꿈 내용 수정';
+                submitBtn.textContent = '💾 수정 완료';
+
+                await loadDreamData(dreamId);
+            } else {
+                // Create Mode Setup
+                document.getElementById('dreamDate').valueAsDate = new Date();
+            }
+        }
+
+        // Load existing dream data
+        async function loadDreamData(id) {
+            try {
+                const response = await authenticatedFetch(`${API_URL}/dreams/${id}`);
+                const data = await response.json();
+
+                if (!response.ok) throw new Error(data.error);
+
+                const dream = data.dream;
+
+                // Populate form
+                document.getElementById('dreamDate').value = dream.date.split('T')[0];
+                document.getElementById('dreamTitle').value = dream.title;
+                document.getElementById('dreamContent').value = dream.content;
+
+                // Populate emotions
+                if (dream.emotions && dream.emotions.length > 0) {
+                    dream.emotions.forEach(emotion => {
+                        const checkbox = document.querySelector(`input[name="emotions"][value="${emotion}"]`);
+                        if (checkbox) checkbox.checked = true;
+                    });
+                }
+            } catch (error) {
+                alert('꿈 정보를 불러오는데 실패했습니다: ' + error.message);
+                window.location.href = '/dashboard.html';
+            }
+        }
 
         // Handle form submission
         async function handleDreamSubmission(event) {
@@ -110,10 +158,13 @@
 
             try {
                 submitButton.disabled = true;
-                submitButton.textContent = '저장 중...';
+                submitButton.textContent = isEditMode ? '수정 중...' : '저장 중...';
 
-                const response = await authenticatedFetch(`${API_URL}/dreams`, {
-                    method: 'POST',
+                const url = isEditMode ? `${API_URL}/dreams/${dreamId}` : `${API_URL}/dreams`;
+                const method = isEditMode ? 'PUT' : 'POST';
+
+                const response = await authenticatedFetch(url, {
+                    method: method,
                     body: JSON.stringify({
                         date,
                         title,
@@ -128,24 +179,32 @@
                     throw new Error(data.error || '꿈 저장에 실패했습니다');
                 }
 
-                // Ask if user wants to analyze the dream
-                const analyze = confirm('꿈이 저장되었습니다! 지금 바로 AI 분석을 받으시겠습니까?');
-
-                if (analyze) {
-                    // Redirect to analysis
-                    window.location.href = `/analysis-result.html?dreamId=${data.dreamId}&analyze=true`;
+                if (isEditMode) {
+                    alert('수정이 완료되었습니다!');
+                    window.location.href = `/analysis-result.html?dreamId=${dreamId}`;
                 } else {
-                    // Redirect to dashboard
-                    window.location.href = '/dashboard.html';
+                    // Ask if user wants to analyze the dream
+                    const analyze = confirm('꿈이 저장되었습니다! 지금 바로 AI 분석을 받으시겠습니까?');
+
+                    if (analyze) {
+                        // Redirect to analysis
+                        window.location.href = `/analysis-result.html?dreamId=${data.dreamId}&analyze=true`;
+                    } else {
+                        // Redirect to dashboard
+                        window.location.href = '/dashboard.html';
+                    }
                 }
 
             } catch (error) {
                 errorDiv.textContent = error.message;
                 errorDiv.classList.remove('hidden');
                 submitButton.disabled = false;
-                submitButton.textContent = '💾 저장하기';
+                submitButton.textContent = isEditMode ? '💾 수정 완료' : '💾 저장하기';
             }
         }
+
+        // Run initialization
+        initPage();
     </script>
 </body>
 

@@ -103,6 +103,43 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 /**
+ * PUT /api/dreams/:id
+ * Update a dream
+ */
+router.put('/:id', authenticateToken, async (req, res) => {
+    const dreamId = req.params.id;
+    const { date, title, content, emotions } = req.body;
+
+    if (!date || !title || !content) {
+        return res.status(400).json({ error: 'Date, title, and content are required' });
+    }
+
+    try {
+        // Verify ownership
+        const existingDream = await db.get(
+            'SELECT id FROM dreams WHERE id = ? AND user_id = ?',
+            [dreamId, req.user.id]
+        );
+
+        if (!existingDream) {
+            return res.status(404).json({ error: 'Dream not found' });
+        }
+
+        const emotionsStr = Array.isArray(emotions) ? JSON.stringify(emotions) : emotions;
+
+        await db.query(
+            'UPDATE dreams SET date = ?, title = ?, content = ?, emotions = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [date, title, content, emotionsStr, dreamId]
+        );
+
+        res.json({ message: 'Dream updated successfully' });
+    } catch (error) {
+        console.error('Dream update error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+/**
  * DELETE /api/dreams/:id
  * Delete a dream
  */
