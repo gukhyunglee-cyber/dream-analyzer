@@ -1,6 +1,6 @@
 {
   "name": "dream-analyzer",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "Jung-based dream analysis and psychological state tracking system",
   "main": "server.js",
   "scripts": {
@@ -24,6 +24,7 @@
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
     "openai": "^4.28.0",
     "pg": "^8.18.0",
     "sqlite3": "^5.1.6"
