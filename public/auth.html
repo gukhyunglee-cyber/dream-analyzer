@@ -44,8 +44,13 @@
             <h2 class="mb-md">회원가입</h2>
             <form onsubmit="handleRegister(event)">
                 <div class="form-group">
-                    <label class="form-label" for="registerUsername">사용자 이름</label>
+                    <label class="form-label" for="registerUsername">사용자 이름 (ID)</label>
                     <input type="text" id="registerUsername" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="registerNickname">별명 (게시판 표시용)</label>
+                    <input type="text" id="registerNickname" class="form-input" required>
                 </div>
 
                 <div class="form-group">
@@ -80,6 +85,17 @@
             </form>
         </div>
     </div>
+
+    <!-- Global Footer -->
+    <footer
+        style="margin-top: 4rem; padding: 2rem; border-top: 1px solid var(--glass-border); text-align: center; color: var(--color-text-muted);">
+        <div style="display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+            <a href="/about.html" style="color: var(--color-text-secondary); text-decoration: none;">서비스 소개</a>
+            <a href="/terms.html" style="color: var(--color-text-secondary); text-decoration: none;">이용약관</a>
+            <a href="/privacy.html" style="color: var(--color-text-secondary); text-decoration: none;">개인정보 처리방침</a>
+        </div>
+        <p style="font-size: 0.9rem;">&copy; 2024 Dream Analyzer. All rights reserved.</p>
+    </footer>
 
     <script src="/js/auth.js"></script>
 </body>

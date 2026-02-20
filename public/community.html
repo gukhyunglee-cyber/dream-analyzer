@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>커뮤니티 - 꿈 분석기</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <style>
+        .comment-section {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--glass-border);
+            display: none;
+        }
+
+        .comment-item {
+            background: var(--glass-bg);
+            padding: 0.75rem;
+            border-radius: var(--radius-sm);
+            margin-bottom: 0.5rem;
+        }
+
+        .comment-item p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .comment-meta {
+            font-size: 0.75rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 0.25rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .btn-toggle-comments {
+            background: none;
+            border: none;
+            color: var(--color-accent);
+            cursor: pointer;
+            padding: 0;
+            font-size: 0.9rem;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/index.html" class="navbar-brand">🌙 꿈 분석기</a>
+            <ul class="navbar-nav">
+                <li><a href="/dashboard.html" class="navbar-link">대시보드</a></li>
+                <li><a href="/dream-journal.html" class="navbar-link">꿈 일지</a></li>
+                <li><a href="/community.html" class="navbar-link active">커뮤니티 (게시판)</a></li>
+                <li id="nav-auth-section">
+                    <!-- Auth content injected via JS -->
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container" style="margin-top: 2rem;">
+        <div class="d-flex" style="justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h1>🌐 꿈 공유 게시판</h1>
+            <p class="text-muted">다른 사람들과 신비로운 꿈 기록을 나누고 공감해보세요.</p>
+        </div>
+
+        <div id="loading" class="text-center" style="display: none; padding: 2rem;">
+            <div class="loading"></div>
+            <p class="mt-md text-muted">커뮤니티 꿈 불러오는 중...</p>
+        </div>
+
+        <div id="communityList" style="display: grid; gap: 1.5rem;">
+            <!-- Public dreams injected here -->
+        </div>
+    </div>
+
+    <!-- Global Footer -->
+    <footer
+        style="margin-top: 4rem; padding: 2rem; border-top: 1px solid var(--glass-border); text-align: center; color: var(--color-text-muted);">
+        <div style="display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+            <a href="/about.html" style="color: var(--color-text-secondary); text-decoration: none;">서비스 소개</a>
+            <a href="/terms.html" style="color: var(--color-text-secondary); text-decoration: none;">이용약관</a>
+            <a href="/privacy.html" style="color: var(--color-text-secondary); text-decoration: none;">개인정보 처리방침</a>
+        </div>
+        <p style="font-size: 0.9rem;">&copy; 2024 Dream Analyzer. All rights reserved.</p>
+    </footer>
+
+    <script src="/js/app.js"></script>
+    <script>
+        // Setup authenticated navigation
+        document.addEventListener('DOMContentLoaded', async () => {
+            const authSection = document.getElementById('nav-auth-section');
+            if (authSection) {
+                if (isAuthenticated()) {
+                    try {
+                        const res = await authenticatedFetch(`${API_URL}/auth/me`);
+                        const user = await res.json();
+                        if (res.ok) {
+                            const avatarUrl = user.profile_image_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.username;
+                            const displayName = user.nickname || user.username;
+
+                            authSection.innerHTML = `
+                                <div class="user-profile-widget" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; position: relative;" onclick="toggleProfileMenu(event)">
+                                    <img src="${avatarUrl}" alt="Profile" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--color-primary-light); object-fit: cover;">
+                                    <span style="color: var(--color-text); font-weight: 500; font-size: 0.95rem;">${displayName}</span>
+                                    
+                                    <div id="nav-profile-menu" style="display: none; position: absolute; top: 120%; right: 0; background: var(--color-surface); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); padding: 0.5rem 0; min-width: 150px; box-shadow: var(--shadow-md); z-index: 1000;">
+                                        <a href="/dashboard.html" style="display: block; padding: 0.5rem 1rem; color: var(--color-text); text-decoration: none; font-size: 0.9rem;">내 정보</a>
+                                        <div style="height: 1px; background: var(--glass-border); margin: 0.25rem 0;"></div>
+                                        <a href="#" onclick="logout(); return false;" style="display: block; padding: 0.5rem 1rem; color: var(--color-error); text-decoration: none; font-size: 0.9rem;">로그아웃</a>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    } catch (e) {
+                        console.error('Failed to load user for nav', e);
+                        authSection.innerHTML = '<li><a href="#" class="navbar-link" onclick="logout()">로그아웃</a></li>';
+                    }
+                } else {
+                    authSection.innerHTML = '<li><a href="/auth.html" class="navbar-link">로그인</a></li>';
+                }
+            }
+            loadCommunityDreams();
+        });
+
+        function toggleProfileMenu(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('nav-profile-menu');
+            if (menu.style.display === 'none' || !menu.style.display) {
+                menu.style.display = 'block';
+            } else {
+                menu.style.display = 'none';
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', () => {
+            const menu = document.getElementById('nav-profile-menu');
+            if (menu) menu.style.display = 'none';
+        });
+
+        async function loadCommunityDreams() {
+            showLoading('communityList');
+            try {
+                const fetchFunc = isAuthenticated() ? authenticatedFetch : fetch;
+                const headers = isAuthenticated() ? {
+                    'Authorization': `Bearer ${localStorage.getItem('dream_token')}`
+                } : {};
+
+                const response = await fetchFunc(`${API_URL}/community`, { headers });
+                const data = await response.json();
+
+                if (!response.ok) throw new Error(data.error || 'Failed to load community dreams');
+
+                const communityList = document.getElementById('communityList');
+                communityList.innerHTML = '';
+
+                if (data.dreams.length === 0) {
+                    communityList.innerHTML = `
+                        <div class="card text-center" style="padding: 3rem;">
+                            <h3>📭 아직 공유된 꿈이 없습니다.</h3>
+                            <p class="text-muted">꿈 일지에서 내 꿈을 공개로 설정하여 첫 공유자가 되어보세요!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                data.dreams.forEach((dream, index) => {
+                    const delay = index * 0.1;
+                    const card = document.createElement('div');
+                    card.className = 'card fade-in';
+                    card.style.animationDelay = `${delay}s`;
+
+                    let emotionsHtml = '';
+                    if (dream.emotions && dream.emotions.length > 0) {
+                        emotionsHtml = `<div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                            ${dream.emotions.map(e => `<span style="background: var(--color-primary-light); padding: 0.2rem 0.6rem; border-radius: 1rem; font-size: 0.8rem;">${e}</span>`).join('')}
+                        </div>`;
+                    }
+
+                    // Mask exact date, show relative
+                    const dreamDate = new Date(dream.date).toLocaleDateString();
+
+                    // Map reaction counts safely
+                    const r = dream.reactions || {};
+                    const rLikes = r['👍'] || 0;
+                    const rHearts = r['❤️'] || 0;
+                    const rSmiles = r['😊'] || 0;
+                    const rCrys = r['😢'] || 0;
+                    const rWows = r['😮'] || 0;
+
+                    const authorAvatarHtml = dream.profile_image_url
+                        ? `<img src="${dream.profile_image_url}" alt="avatar" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 5px;">`
+                        : '👤 ';
+
+                    card.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                            <h3 style="margin: 0; color: var(--color-accent);">${dream.title}</h3>
+                            <span class="text-muted" style="font-size: 0.85rem;">${dreamDate} • ${authorAvatarHtml}${dream.display_name}</span>
+                        </div>
+                        ${emotionsHtml}
+                        <p style="color: var(--color-text); line-height: 1.6; margin-bottom: 1rem;">${dream.content}</p>
+                        ${dream.overall_interpretation ? `
+                        <div style="background: var(--color-surface); padding: 1rem; border-radius: var(--radius-sm); border-left: 3px solid var(--color-accent); margin-bottom: 1rem;">
+                            <h4 style="color: var(--color-accent); margin-bottom: 0.5rem; font-size: 0.95rem;">✨ 전체 해석</h4>
+                            <p style="font-size: 0.9rem; color: var(--color-text); margin: 0; line-height: 1.6;">${dream.overall_interpretation}</p>
+                        </div>
+                        ` : ''}
+                        
+                        <!-- Reaction Bar -->
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                            <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.85rem;" onclick="toggleReaction('dream', ${dream.id}, '👍')">👍 ${rLikes}</button>
+                            <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.85rem;" onclick="toggleReaction('dream', ${dream.id}, '❤️')">❤️ ${rHearts}</button>
+                            <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.85rem;" onclick="toggleReaction('dream', ${dream.id}, '😊')">😊 ${rSmiles}</button>
+                            <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.85rem;" onclick="toggleReaction('dream', ${dream.id}, '😢')">😢 ${rCrys}</button>
+                            <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.85rem;" onclick="toggleReaction('dream', ${dream.id}, '😮')">😮 ${rWows}</button>
+                        </div>
+
+                        <div style="text-align: right;">
+                            <button class="btn-toggle-comments" onclick="toggleComments(${dream.id}, this)">
+                                💬 댓글 보기
+                            </button>
+                        </div>
+
+                        <div id="comments-${dream.id}" class="comment-section">
+                            <!-- Comments loaded here -->
+                            <div class="comments-list" style="margin-bottom: 1rem;"></div>
+                            
+                            <!-- Comment Form (only if logged in) -->
+                            ${isAuthenticated() ? `
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <input type="text" id="comment-input-${dream.id}" class="form-control" placeholder="따뜻한 위로와 공감의 댓글을 남겨보세요." style="flex: 1; margin-bottom: 0;">
+                                    <button onclick="submitComment(${dream.id})" class="btn btn-primary" style="padding: 0.5rem 1rem;">작성</button>
+                                </div>
+                            ` : `
+                                <div class="text-center p-sm" style="background: var(--glass-bg); border-radius: var(--radius-sm);">
+                                    <p class="text-muted m-0" style="font-size: 0.85rem;">댓글을 남기려면 <a href="/auth.html" style="color: var(--color-accent);">로그인</a>이 필요합니다.</p>
+                                </div>
+                            `}
+                        </div>
+                    `;
+                    communityList.appendChild(card);
+                });
+
+            } catch (error) {
+                showError('communityList', '커뮤니티 데이터를 불러오는 데 실패했습니다.');
+                console.error(error);
+            }
+        }
+
+        async function toggleComments(dreamId, btnElement) {
+            const commentSection = document.getElementById(`comments-${dreamId}`);
+
+            if (commentSection.style.display === 'block') {
+                commentSection.style.display = 'none';
+                btnElement.textContent = '💬 댓글 보기';
+                return;
+            }
+
+            // Expand
+            commentSection.style.display = 'block';
+            btnElement.textContent = '숨기기';
+
+            // Fetch comments
+            await loadComments(dreamId);
+        }
+
+        async function toggleReaction(targetType, targetId, emoji) {
+            if (!isAuthenticated()) {
+                alert('로그인이 필요한 기능입니다.');
+                return window.location.href = '/auth.html';
+            }
+            try {
+                const res = await authenticatedFetch(`${API_URL}/community/react`, {
+                    method: 'POST',
+                    body: JSON.stringify({ target_type: targetType, target_id: targetId, emoji })
+                });
+
+                if (res.ok) {
+                    // Re-render comments if it's a comment, or the whole list if it's a dream
+                    if (targetType === 'dream') {
+                        loadCommunityDreams();
+                    } else {
+                        // We need the parent dream ID to reload comments.
+                        // For simplicity, we can just trigger a general reload or store the mapping.
+                        // Finding the closest comment section block:
+                        const section = document.querySelector(`#reply-box-${targetId}`)?.closest('.comment-section');
+                        if (section) {
+                            const dreamId = section.id.replace('comments-', '');
+                            loadComments(dreamId);
+                        } else {
+                            loadCommunityDreams(); // Fallback
+                        }
+                    }
+                } else {
+                    const data = await res.json();
+                    alert(data.error || '반응 처리 실패');
+                }
+            } catch (e) {
+                alert('반응을 저장하는 중에 오류가 발생했습니다.');
+            }
+        }
+
+        function organizeCommentsTree(comments) {
+            const map = {};
+            const roots = [];
+            comments.forEach(c => {
+                map[c.id] = { ...c, children: [] };
+            });
+            comments.forEach(c => {
+                if (c.parent_id && map[c.parent_id]) {
+                    map[c.parent_id].children.push(map[c.id]);
+                } else {
+                    roots.push(map[c.id]);
+                }
+            });
+            return roots;
+        }
+
+        function renderCommentHtml(c, dreamId, isReply = false) {
+            const date = new Date(c.created_at).toLocaleString();
+            const r = c.reactions || {};
+            const depthStyle = isReply ? "margin-left: 2rem; border-left: 2px solid var(--color-accent); padding-left: 1rem;" : "";
+
+            const authorAvatarHtml = c.profile_image_url
+                ? `<img src="${c.profile_image_url}" alt="avatar" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 5px;">`
+                : '👤 ';
+
+            let html = `
+                <div class="comment-item" style="${depthStyle}">
+                    <div class="comment-meta">
+                        <strong>${authorAvatarHtml}${c.display_name}</strong>
+                        <span>${date}</span>
+                    </div>
+                    <p style="margin-bottom: 0.5rem;">${c.content}</p>
+                    
+                    <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
+                        <button class="btn btn-outline" style="padding: 0.1rem 0.4rem; font-size: 0.75rem;" onclick="toggleReaction('comment', ${c.id}, '👍')">👍 ${r['👍'] || 0}</button>
+                        <button class="btn btn-outline" style="padding: 0.1rem 0.4rem; font-size: 0.75rem;" onclick="toggleReaction('comment', ${c.id}, '❤️')">❤️ ${r['❤️'] || 0}</button>
+                        <button class="btn-toggle-comments" style="font-size: 0.8rem; margin-left: 0.5rem;" onclick="document.getElementById('reply-box-${c.id}').style.display = 'flex'">↩️ 답글달기</button>
+                    </div>
+
+                    <div id="reply-box-${c.id}" style="display: none; gap: 0.5rem; margin-top: 0.5rem;">
+                        <input type="text" id="reply-input-${c.id}" class="form-control" placeholder="답글을 입력하세요..." style="flex: 1; margin-bottom: 0; padding: 0.3rem 0.6rem; font-size: 0.85rem;">
+                        <button onclick="submitComment(${dreamId}, ${c.id})" class="btn btn-primary" style="padding: 0.3rem 0.8rem; font-size: 0.85rem;">작성</button>
+                    </div>
+                </div>
+            `;
+
+            if (c.children && c.children.length > 0) {
+                c.children.forEach(child => {
+                    html += renderCommentHtml(child, dreamId, true);
+                });
+            }
+
+            return html;
+        }
+
+        async function loadComments(dreamId) {
+            const listContainer = document.querySelector(`#comments-${dreamId} .comments-list`);
+            listContainer.innerHTML = '<p class="text-muted" style="font-size:0.8rem;">댓글 불러오는 중...</p>';
+
+            try {
+                const res = await fetch(`${API_URL}/community/${dreamId}/comments`);
+                const data = await res.json();
+
+                listContainer.innerHTML = '';
+
+                if (data.comments.length === 0) {
+                    listContainer.innerHTML = '<p class="text-muted" style="font-size:0.85rem; text-align:center;">아직 작성된 댓글이 없습니다.</p>';
+                } else {
+                    const roots = organizeCommentsTree(data.comments);
+                    roots.forEach(c => {
+                        const wrapper = document.createElement('div');
+                        wrapper.innerHTML = renderCommentHtml(c, dreamId);
+                        listContainer.appendChild(wrapper);
+                    });
+                }
+            } catch (e) {
+                listContainer.innerHTML = '<p style="color:red; font-size:0.8rem;">댓글을 불러올 수 없습니다.</p>';
+            }
+        }
+
+        async function submitComment(dreamId, parentId = null) {
+            const inputId = parentId ? `reply-input-${parentId}` : `comment-input-${dreamId}`;
+            const input = document.getElementById(inputId);
+            const content = input.value;
+
+            if (!content || content.trim() === '') {
+                alert('댓글 내용을 입력해주세요.');
+                return;
+            }
+
+            const btn = input.nextElementSibling;
+            btn.disabled = true;
+
+            const payload = { content: content.trim() };
+            if (parentId) payload.parent_id = parentId;
+
+            try {
+                const res = await authenticatedFetch(`${API_URL}/community/${dreamId}/comments`, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    input.value = '';
+                    await loadComments(dreamId); // Reload comments to show the new one
+                } else {
+                    const data = await res.json();
+                    alert(data.error || '댓글 작성 실패');
+                }
+            } catch (e) {
+                console.error('Comment error:', e);
+                alert('서버 오류로 댓글 작성에 실패했습니다.');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+
+</html>

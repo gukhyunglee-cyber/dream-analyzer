@@ -8,6 +8,8 @@ const { initDatabase } = require('./database/init');
 const authRoutes = require('./routes/auth');
 const dreamsRoutes = require('./routes/dreams');
 const analysisRoutes = require('./routes/analysis');
+const communityRoutes = require('./routes/community');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,6 +26,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/auth', authRoutes);
 app.use('/api/dreams', dreamsRoutes);
 app.use('/api/analysis', analysisRoutes);
+app.use('/api/community', communityRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Root route
 app.get('/', (req, res) => {

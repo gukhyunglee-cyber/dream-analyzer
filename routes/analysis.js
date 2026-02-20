@@ -6,6 +6,53 @@ const { getAIService } = require('../services/aiService');
 const router = express.Router();
 
 /**
+ * POST /api/analysis/guest
+ * Analyze a dream using AI (Jungian analysis) for non-registered users.
+ * Does NOT save the dream or analysis to the database.
+ */
+router.post('/guest', async (req, res) => {
+    const { dreamContent } = req.body;
+
+    if (!dreamContent || dreamContent.trim() === '') {
+        return res.status(400).json({ error: 'Dream content is required for analysis' });
+    }
+
+    try {
+        // Prepare minimal user info for generic analysis
+        const userInfo = {
+            birth_date: null,
+            gender: null
+        };
+
+        // Call AI service
+        const aiService = getAIService();
+        const result = await aiService.analyzeDream(dreamContent, userInfo);
+
+        if (!result.success) {
+            return res.status(500).json({ error: 'AI analysis failed: ' + result.error });
+        }
+
+        const analysis = result.analysis;
+
+        res.json({
+            message: 'Guest analysis completed successfully',
+            analysis: {
+                overall_interpretation: analysis.overall_interpretation,
+                archetypes: analysis.archetypes,
+                symbols: analysis.symbols,
+                psychological_state: analysis.psychological_state,
+                individuation_insights: analysis.individuation_insights,
+                recommendations: analysis.recommendations
+            }
+        });
+
+    } catch (error) {
+        console.error('Guest analysis error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+/**
  * POST /api/analysis/analyze
  * Analyze a dream using AI (Jungian analysis)
  */
@@ -48,14 +95,16 @@ router.post('/analyze', authenticateToken, async (req, res) => {
 
         // Save analysis to database
         const insertResult = await db.query(
-            `INSERT INTO analyses (dream_id, analysis_text, archetypes, symbols, psychological_state)
-           VALUES (?, ?, ?, ?, ?)`,
+            `INSERT INTO analyses (dream_id, analysis_text, archetypes, symbols, psychological_state, individuation_insights, recommendations)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [
                 dreamId,
                 analysis.overall_interpretation || '',
                 JSON.stringify(analysis.archetypes || []),
                 JSON.stringify(analysis.symbols || {}),
-                analysis.psychological_state || ''
+                analysis.psychological_state || '',
+                analysis.individuation_insights || '',
+                analysis.recommendations || ''
             ]
         );
 
@@ -114,6 +163,8 @@ router.get('/:dreamId', authenticateToken, async (req, res) => {
                 archetypes: JSON.parse(analysis.archetypes || '[]'),
                 symbols: JSON.parse(analysis.symbols || '{}'),
                 psychological_state: analysis.psychological_state,
+                individuation_insights: analysis.individuation_insights,
+                recommendations: analysis.recommendations,
                 created_at: analysis.created_at
             }
         });

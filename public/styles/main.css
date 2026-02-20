@@ -10,54 +10,61 @@
    ======================================== */
 :root {
   /* Primary Colors - Deep mysterious tones */
-  --color-primary: #4A148C;        /* Deep Purple - unconscious depths */
-  --color-primary-light: #7B1FA2;  /* Lighter Purple */
-  --color-primary-dark: #311B92;   /* Darker Purple */
-  
+  --color-primary: #4A148C;
+  /* Deep Purple - unconscious depths */
+  --color-primary-light: #7B1FA2;
+  /* Lighter Purple */
+  --color-primary-dark: #311B92;
+  /* Darker Purple */
+
   /* Secondary Colors - Mystical blues */
-  --color-secondary: #1A237E;      /* Midnight Blue */
+  --color-secondary: #1A237E;
+  /* Midnight Blue */
   --color-secondary-light: #283593;
   --color-secondary-dark: #0D47A1;
-  
+
   /* Accent Colors */
-  --color-accent: #D4AF37;         /* Gold - individuation/wholeness */
+  --color-accent: #D4AF37;
+  /* Gold - individuation/wholeness */
   --color-accent-light: #F4D03F;
-  
+
   /* Neutrals */
-  --color-background: #0A0E27;     /* Deep dark background */
-  --color-surface: #1A1F3A;        /* Card/surface color */
+  --color-background: #0A0E27;
+  /* Deep dark background */
+  --color-surface: #1A1F3A;
+  /* Card/surface color */
   --color-surface-light: #242B4A;
-  
+
   /* Text Colors */
   --color-text-primary: #E8EAF6;
   --color-text-secondary: #B0B8D4;
   --color-text-muted: #7C8DB0;
-  
+
   /* Status Colors */
   --color-success: #00E676;
   --color-warning: #FFD600;
   --color-error: #FF5252;
-  
+
   /* Glassmorphism */
   --glass-bg: rgba(26, 31, 58, 0.7);
   --glass-border: rgba(232, 234, 246, 0.1);
-  
+
   /* Typography */
   --font-display: 'Playfair Display', serif;
   --font-body: 'Inter', sans-serif;
-  
+
   /* Spacing */
   --spacing-xs: 0.5rem;
   --spacing-sm: 1rem;
   --spacing-md: 1.5rem;
   --spacing-lg: 2rem;
   --spacing-xl: 3rem;
-  
+
   /* Border Radius */
   --radius-sm: 8px;
   --radius-md: 16px;
   --radius-lg: 24px;
-  
+
   /* Shadows */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
@@ -89,7 +96,12 @@ body {
 /* ========================================
    Typography
    ======================================== */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-display);
   font-weight: 700;
   line-height: 1.2;
@@ -248,6 +260,11 @@ p {
   background: rgba(255, 255, 255, 0.08);
 }
 
+.form-select option {
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
 .form-textarea {
   min-height: 150px;
   resize: vertical;
@@ -311,12 +328,29 @@ p {
   color: var(--color-text-muted);
 }
 
-.mt-sm { margin-top: var(--spacing-sm); }
-.mt-md { margin-top: var(--spacing-md); }
-.mt-lg { margin-top: var(--spacing-lg); }
-.mb-sm { margin-bottom: var(--spacing-sm); }
-.mb-md { margin-bottom: var(--spacing-md); }
-.mb-lg { margin-bottom: var(--spacing-lg); }
+.mt-sm {
+  margin-top: var(--spacing-sm);
+}
+
+.mt-md {
+  margin-top: var(--spacing-md);
+}
+
+.mt-lg {
+  margin-top: var(--spacing-lg);
+}
+
+.mb-sm {
+  margin-bottom: var(--spacing-sm);
+}
+
+.mb-md {
+  margin-bottom: var(--spacing-md);
+}
+
+.mb-lg {
+  margin-bottom: var(--spacing-lg);
+}
 
 .hidden {
   display: none;
@@ -330,6 +364,7 @@ p {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -344,6 +379,7 @@ p {
   0% {
     background-position: -1000px 0;
   }
+
   100% {
     background-position: 1000px 0;
   }
@@ -362,17 +398,95 @@ p {
   h1 {
     font-size: 2rem;
   }
-  
+
   h2 {
     font-size: 1.75rem;
   }
-  
+
   .container,
   .container-narrow {
     padding: var(--spacing-md);
   }
-  
+
   .navbar-nav {
     gap: var(--spacing-sm);
   }
+}
+
+/* ========================================
+   Modals & Popups
+   ======================================== */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(10, 14, 39, 0.8);
+  backdrop-filter: blur(5px);
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 1;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modal.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.modal-content {
+  background: var(--color-surface);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: var(--spacing-lg);
+  position: relative;
+  transform: translateY(0);
+  transition: transform 0.3s ease;
+  margin: auto;
+}
+
+.modal.hidden .modal-content {
+  transform: translateY(-50px);
+}
+
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1.5rem;
+  font-size: 1.5rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  background: none;
+  border: none;
+  transition: color 0.3s;
+}
+
+.modal-close:hover {
+  color: var(--color-error);
+}
+
+/* Avatar Upload Preview */
+.avatar-preview-container {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 2px dashed var(--color-accent);
+  margin: 0 auto var(--spacing-md);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-light);
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
 }

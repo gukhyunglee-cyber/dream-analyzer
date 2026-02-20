@@ -65,7 +65,7 @@ async function query(text, params = []) {
                         console.error('Database query error:', err);
                         reject(err);
                     }
-                    else resolve({ rows, rowCount: rows.length });
+                    else resolve({ rows: rows, rowCount: rows.length });
                 });
             } else {
                 db.run(text, params, function (err) {

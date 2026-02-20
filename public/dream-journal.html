@@ -9,15 +9,15 @@
 </head>
 
 <body>
-    <!-- Navigation -->
     <nav class="navbar">
         <div class="navbar-content">
-            <a href="/dashboard.html" class="navbar-brand">🌙 꿈 분석기</a>
-            <ul class="navbar-nav">
-                <li><a href="/dashboard.html" class="navbar-link">대시보드</a></li>
-                <li><a href="/dream-journal.html" class="navbar-link">꿈 일지</a></li>
-                <li><a href="#" class="navbar-link" onclick="logout()">로그아웃</a></li>
-            </ul>
+            <a href="/index.html" class="navbar-brand">🌙 꿈 분석기</a>
+            <li><a href="/dashboard.html" class="navbar-link">대시보드</a></li>
+            <li><a href="/dream-journal.html" class="navbar-link">꿈 일지</a></li>
+            <li><a href="/community.html" class="navbar-link">커뮤니티 (게시판)</a></li>
+            <li id="nav-auth-section">
+                <!-- Auth content injected via JS -->
+            </li>
         </div>
     </nav>
 
@@ -44,12 +44,75 @@
         <div id="dreamsList"></div>
     </div>
 
+    <!-- Global Footer -->
+    <footer
+        style="margin-top: 4rem; padding: 2rem; border-top: 1px solid var(--glass-border); text-align: center; color: var(--color-text-muted);">
+        <div style="display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+            <a href="/about.html" style="color: var(--color-text-secondary); text-decoration: none;">서비스 소개</a>
+            <a href="/terms.html" style="color: var(--color-text-secondary); text-decoration: none;">이용약관</a>
+            <a href="/privacy.html" style="color: var(--color-text-secondary); text-decoration: none;">개인정보 처리방침</a>
+        </div>
+        <p style="font-size: 0.9rem;">&copy; 2024 Dream Analyzer. All rights reserved.</p>
+    </footer>
+
     <script src="/js/app.js"></script>
     <script>
         // Check authentication
         if (!isAuthenticated()) {
             window.location.href = '/auth.html';
         }
+
+        // Setup authenticated navigation
+        document.addEventListener('DOMContentLoaded', async () => {
+            const authSection = document.getElementById('nav-auth-section');
+            if (!authSection) return;
+
+            if (isAuthenticated()) {
+                try {
+                    const res = await authenticatedFetch(`${API_URL}/auth/me`);
+                    const user = await res.json();
+                    if (res.ok) {
+                        const avatarUrl = user.profile_image_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.username;
+                        const displayName = user.nickname || user.username;
+
+                        authSection.innerHTML = `
+                            <div class="user-profile-widget" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; position: relative;" onclick="toggleProfileMenu(event)">
+                                <img src="${avatarUrl}" alt="Profile" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--color-primary-light); object-fit: cover;">
+                                <span style="color: var(--color-text); font-weight: 500; font-size: 0.95rem;">${displayName}</span>
+                                
+                                <div id="nav-profile-menu" style="display: none; position: absolute; top: 120%; right: 0; background: var(--color-surface); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); padding: 0.5rem 0; min-width: 150px; box-shadow: var(--shadow-md); z-index: 1000;">
+                                    <a href="/dashboard.html" style="display: block; padding: 0.5rem 1rem; color: var(--color-text); text-decoration: none; font-size: 0.9rem;">내 정보</a>
+                                    <div style="height: 1px; background: var(--glass-border); margin: 0.25rem 0;"></div>
+                                    <a href="#" onclick="logout(); return false;" style="display: block; padding: 0.5rem 1rem; color: var(--color-error); text-decoration: none; font-size: 0.9rem;">로그아웃</a>
+                                </div>
+                            </div>
+                        `;
+                    }
+                } catch (e) {
+                    console.error('Failed to load user for nav', e);
+                    authSection.innerHTML = '<li><a href="#" class="navbar-link" onclick="logout()">로그아웃</a></li>';
+                }
+            } else {
+                authSection.innerHTML = '<li><a href="/auth.html" class="navbar-link">로그인</a></li>';
+            }
+        });
+
+        function toggleProfileMenu(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('nav-profile-menu');
+            if (menu.style.display === 'none' || !menu.style.display) {
+                // close others if they existed
+                menu.style.display = 'block';
+            } else {
+                menu.style.display = 'none';
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', () => {
+            const menu = document.getElementById('nav-profile-menu');
+            if (menu) menu.style.display = 'none';
+        });
 
         // Load all dreams
         async function loadDreams() {
@@ -108,8 +171,22 @@
                 `).join('')}
               </div>
             ` : ''}
+
+            ${dream.analysis && Object.keys(dream.analysis).length > 0 ? `
+              <div style="background: var(--color-surface); padding: 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; border-left: 3px solid var(--color-accent);">
+                <h4 style="color: var(--color-accent); margin-bottom: 0.5rem; font-size: 0.95rem;">🌟 내면 성장을 위한 조언</h4>
+                <p style="font-size: 0.9rem; color: var(--color-text); margin-bottom: 1rem;">${dream.analysis.individuation_insights || '분석 결과가 없습니다.'}</p>
+                <h4 style="color: var(--color-accent-light); margin-bottom: 0.5rem; font-size: 0.95rem;">💡 성찰 제안</h4>
+                <p style="font-size: 0.9rem; color: var(--color-text); margin-bottom: 0;">${dream.analysis.recommendations || '제안된 내용이 없습니다.'}</p>
+              </div>
+            ` : ''}
             
-            <div style="padding-top: 1rem; border-top: 1px solid var(--glass-border);">
+            <div style="padding-top: 1rem; border-top: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <button onclick="event.stopPropagation(); togglePublicStatus(${dream.id}, ${!dream.is_public})" class="btn" style="padding: 0.3rem 0.8rem; font-size: 0.85rem; background: ${dream.is_public ? 'var(--color-surface-light)' : 'var(--glass-bg)'}; border: 1px solid ${dream.is_public ? 'var(--color-primary)' : 'var(--glass-border)'}; color: var(--color-text);">
+                  ${dream.is_public ? '🌍 공개됨 (게시판 공유중)' : '🔒 나만 보기'}
+                </button>
+              </div>
               <span style="color: var(--color-accent); font-weight: 500;">자세히 보기 →</span>
             </div>
           </div>
@@ -147,6 +224,26 @@
 
             } catch (error) {
                 alert('삭제 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+
+        // Toggle public status of a dream
+        async function togglePublicStatus(dreamId, makePublic) {
+            try {
+                const response = await authenticatedFetch(`${API_URL}/community/${dreamId}/visibility`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ isPublic: makePublic })
+                });
+
+                if (response.ok) {
+                    loadDreams(); // reload the list to show updated status
+                } else {
+                    const data = await response.json();
+                    alert(data.error || '상태 변경 중 오류가 발생했습니다.');
+                }
+            } catch (e) {
+                console.error('Toggle error:', e);
+                alert('서버 오류가 발생했습니다.');
             }
         }
 

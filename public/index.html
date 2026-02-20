@@ -32,6 +32,39 @@
       </div>
     </section>
 
+    <!-- Guest Analysis Section (New) -->
+    <section class="mb-lg fade-in"
+      style="animation-delay: 0.1s; background: var(--color-surface); padding: 2rem; border-radius: var(--radius-md); box-shadow: 0 4px 6px var(--shadow-color);">
+      <h2 class="text-center" style="color: var(--color-accent); margin-bottom: 1rem;">🤔 아직 계정이 없으신가요?</h2>
+      <p class="text-center text-muted mb-md">먼저 AI 꿈 분석을 무료로 체험해보세요. (결과는 저장되지 않습니다)</p>
+
+      <div id="guestAnalysisSection">
+        <textarea id="guestDreamContent" class="form-textarea" style="min-height: 120px; margin-bottom: 1rem;"
+          placeholder="어젯밤 어떤 꿈을 꾸셨나요? 생각나는 대로 편하게 적어주세요."></textarea>
+        <button id="btnGuestAnalyze" class="btn btn-primary" style="width: 100%;" onclick="runGuestAnalysis()">✨ AI 분석
+          체험하기</button>
+      </div>
+
+      <div id="guestLoading" style="display: none; padding: 2rem 0; text-align: center;">
+        <h3 style="color: var(--color-primary-light);">🧠 AI가 꿈을 분석하고 있습니다...</h3>
+        <p class="text-muted mt-sm">융의 심리학을 바탕으로 의미를 찾고 있습니다.</p>
+      </div>
+
+      <div id="guestResult"
+        style="display: none; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--glass-border);">
+        <h3 style="color: var(--color-accent); margin-bottom: 1rem;">🔮 분석 결과</h3>
+        <p id="guestInterpretation" style="line-height: 1.6; font-size: 0.95rem;"></p>
+
+        <div class="text-center mt-md">
+          <p class="text-muted" style="margin-bottom: 1rem; font-size: 0.9rem;">더 자세한 분석과 조언을 영구적으로 기록하고 싶다면 가입해보세요!</p>
+          <div style="display: flex; gap: 1rem; justify-content: center;">
+            <button onclick="resetGuestAnalysis()" class="btn btn-primary">다시 분석하기</button>
+            <a href="/auth.html" class="btn btn-outline">회원가입 하러가기</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Features Section -->
     <section id="features" class="features" style="margin-top: 6rem;">
       <h2 class="text-center mb-lg">주요 기능</h2>
@@ -136,6 +169,86 @@
     style="background: var(--color-surface); padding: 2rem; text-align: center; margin-top: 4rem; border-top: 1px solid var(--glass-border);">
     <p class="text-muted">© 2026 꿈 분석기. 칼 융의 분석심리학을 기반으로 합니다.</p>
   </footer>
+
+  <!-- Global Footer -->
+  <footer
+    style="margin-top: 4rem; padding: 2rem; border-top: 1px solid var(--glass-border); text-align: center; color: var(--color-text-muted);">
+    <div style="display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+      <a href="/about.html" style="color: var(--color-text-secondary); text-decoration: none;">서비스 소개</a>
+      <a href="/terms.html" style="color: var(--color-text-secondary); text-decoration: none;">이용약관</a>
+      <a href="/privacy.html" style="color: var(--color-text-secondary); text-decoration: none;">개인정보 처리방침</a>
+    </div>
+    <p style="font-size: 0.9rem;">&copy; 2024 Dream Analyzer. All rights reserved.</p>
+  </footer>
+
+  <script src="/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (isAuthenticated()) {
+        const authButtons = document.querySelector('.hero-buttons');
+        if (authButtons) {
+          authButtons.innerHTML = `
+            <a href="/dashboard.html" class="btn btn-primary" style="font-size: 1.1rem; padding: 1rem 2rem;">대시보드로 가기</a>
+            <button onclick="logout()" class="btn btn-outline" style="font-size: 1.1rem; padding: 1rem 2rem;">로그아웃</button>
+            `;
+        }
+
+        // Hide guest experience if logged in
+        const guestSection = document.getElementById('guestAnalysisSection')?.closest('section');
+        if (guestSection) guestSection.style.display = 'none';
+      }
+    });
+
+    // Run guest analysis
+    async function runGuestAnalysis() {
+      const content = document.getElementById('guestDreamContent').value;
+      if (!content || content.trim() === '') {
+        alert('꿈 내용을 입력해주세요.');
+        return;
+      }
+
+      const inputSection = document.getElementById('guestAnalysisSection');
+      const loader = document.getElementById('guestLoading');
+      const resultArea = document.getElementById('guestResult');
+
+      inputSection.style.display = 'none';
+      resultArea.style.display = 'none';
+      loader.style.display = 'block';
+
+      try {
+        const response = await fetch(`${API_URL}/analysis/guest`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ dreamContent: content })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          loader.style.display = 'none';
+          resultArea.style.display = 'block';
+          document.getElementById('guestInterpretation').textContent = data.analysis.overall_interpretation || '분석을 가져올 수 없습니다.';
+        } else {
+          throw new Error(data.error || '분석 중 오류가 발생했습니다.');
+        }
+
+      } catch (e) {
+        console.error('Guest analysis error:', e);
+        loader.style.display = 'none';
+        inputSection.style.display = 'block';
+        alert('분석에 실패했습니다. 다시 시도해주세요.');
+      }
+    }
+
+    // Reset guest analysis
+    function resetGuestAnalysis() {
+      document.getElementById('guestDreamContent').value = '';
+      document.getElementById('guestResult').style.display = 'none';
+      document.getElementById('guestAnalysisSection').style.display = 'block';
+    }
+  </script>
 </body>
 
 </html>

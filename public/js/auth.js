@@ -57,6 +57,7 @@ async function handleRegister(event) {
     event.preventDefault();
 
     const username = document.getElementById('registerUsername').value;
+    const nickname = document.getElementById('registerNickname').value;
     const email = document.getElementById('registerEmail').value;
     const password = document.getElementById('registerPassword').value;
     const birth_date = document.getElementById('registerBirthDate').value;
@@ -71,6 +72,7 @@ async function handleRegister(event) {
             },
             body: JSON.stringify({
                 username,
+                nickname,
                 email,
                 password,
                 birth_date: birth_date || undefined,

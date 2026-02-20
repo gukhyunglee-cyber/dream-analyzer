@@ -9,13 +9,13 @@
 </head>
 
 <body>
-    <!-- Navigation -->
     <nav class="navbar">
         <div class="navbar-content">
-            <a href="/dashboard.html" class="navbar-brand">🌙 꿈 분석기</a>
+            <a href="/index.html" class="navbar-brand">🌙 꿈 분석기</a>
             <ul class="navbar-nav">
                 <li><a href="/dashboard.html" class="navbar-link">대시보드</a></li>
                 <li><a href="/dream-journal.html" class="navbar-link">꿈 일지</a></li>
+                <li><a href="/community.html" class="navbar-link">커뮤니티 (게시판)</a></li>
                 <li><a href="#" class="navbar-link" onclick="logout()">로그아웃</a></li>
             </ul>
         </div>
@@ -82,6 +82,17 @@
             </form>
         </div>
     </div>
+
+    <!-- Global Footer -->
+    <footer
+        style="margin-top: 4rem; padding: 2rem; border-top: 1px solid var(--glass-border); text-align: center; color: var(--color-text-muted);">
+        <div style="display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+            <a href="/about.html" style="color: var(--color-text-secondary); text-decoration: none;">서비스 소개</a>
+            <a href="/terms.html" style="color: var(--color-text-secondary); text-decoration: none;">이용약관</a>
+            <a href="/privacy.html" style="color: var(--color-text-secondary); text-decoration: none;">개인정보 처리방침</a>
+        </div>
+        <p style="font-size: 0.9rem;">&copy; 2024 Dream Analyzer. All rights reserved.</p>
+    </footer>
 
     <script src="/js/app.js"></script>
     <script>

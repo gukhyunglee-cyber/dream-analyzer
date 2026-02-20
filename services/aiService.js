@@ -112,8 +112,8 @@ Language: Korean (Natural, warm, comforting and VERY EASY Korean).`
                     archetypes: [],
                     symbols: {},
                     psychological_state: "분석 결과를 구조화하지 못했습니다.",
-                    individuation_insights: "",
-                    recommendations: ""
+                    individuation_insights: "현재 이 꿈에 대한 추가적인 내면 성장 조언을 불러올 수 없습니다.",
+                    recommendations: "특별한 성찰 제안이 해석되지 않았습니다."
                 };
             }
 
