@@ -1,0 +1,21 @@
+{
+    "name": "Dream Analyzer",
+    "short_name": "Dreams",
+    "description": "Dream Analyzer with AI Jungian Interpretation",
+    "start_url": "/index.html",
+    "display": "standalone",
+    "background_color": "#0f172a",
+    "theme_color": "#8b5cf6",
+    "icons": [
+        {
+            "src": "https://api.dicebear.com/7.x/shapes/svg?seed=moon",
+            "sizes": "192x192",
+            "type": "image/svg+xml"
+        },
+        {
+            "src": "https://api.dicebear.com/7.x/shapes/svg?seed=moon",
+            "sizes": "512x512",
+            "type": "image/svg+xml"
+        }
+    ]
+}

@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>새 꿈 기록 - 꿈 분석기</title>
     <link rel="stylesheet" href="/styles/main.css">
+  <link rel="manifest" href="/manifest.json">
 </head>
 
 <body>
@@ -15,8 +16,8 @@
             <ul class="navbar-nav">
                 <li><a href="/dashboard.html" class="navbar-link">대시보드</a></li>
                 <li><a href="/dream-journal.html" class="navbar-link">꿈 일지</a></li>
-                <li><a href="/community.html" class="navbar-link">커뮤니티 (게시판)</a></li>
-                <li><a href="#" class="navbar-link" onclick="logout()">로그아웃</a></li>
+                <li><a href="/community.html" class="navbar-link">게시판</a></li>
+                <li id="nav-auth-section"></li>
             </ul>
         </div>
     </nav>

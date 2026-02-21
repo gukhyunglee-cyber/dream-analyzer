@@ -10,6 +10,7 @@ const dreamsRoutes = require('./routes/dreams');
 const analysisRoutes = require('./routes/analysis');
 const communityRoutes = require('./routes/community');
 const adminRoutes = require('./routes/admin');
+const postsRoutes = require('./routes/posts');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,6 +29,7 @@ app.use('/api/dreams', dreamsRoutes);
 app.use('/api/analysis', analysisRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/posts', postsRoutes);
 
 // Root route
 app.get('/', (req, res) => {

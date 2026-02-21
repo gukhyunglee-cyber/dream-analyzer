@@ -20,7 +20,16 @@ router.get('/', async (req, res) => {
             ORDER BY d.created_at DESC
         `, [true, 1]); // Handle both PostgreSQL true and SQLite 1
 
-        const dreamIds = result.rows.map(d => d.id);
+        // Deduplicate dreams (in case of multiple analyses causing duplicate rows)
+        const uniqueRowsMap = new Map();
+        for (const row of result.rows) {
+            if (!uniqueRowsMap.has(row.id)) {
+                uniqueRowsMap.set(row.id, row);
+            }
+        }
+        const uniqueRows = Array.from(uniqueRowsMap.values());
+
+        const dreamIds = uniqueRows.map(d => d.id);
         let reactionsRows = [];
         if (dreamIds.length > 0) {
             const placeholders = dreamIds.map(() => '?').join(',');
@@ -33,7 +42,7 @@ router.get('/', async (req, res) => {
             reactionsRows = rQuery.rows || rQuery;
         }
 
-        const dreams = result.rows.map(dream => {
+        const dreams = uniqueRows.map(dream => {
             const reacts = reactionsRows.filter(r => r.target_id === dream.id);
             const reactMap = {};
             reacts.forEach(r => reactMap[r.emoji] = parseInt(r.count));

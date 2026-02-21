@@ -6,18 +6,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>꿈 일지 - 꿈 분석기</title>
     <link rel="stylesheet" href="/styles/main.css">
+    <link rel="manifest" href="/manifest.json">
 </head>
 
 <body>
     <nav class="navbar">
         <div class="navbar-content">
             <a href="/index.html" class="navbar-brand">🌙 꿈 분석기</a>
-            <li><a href="/dashboard.html" class="navbar-link">대시보드</a></li>
-            <li><a href="/dream-journal.html" class="navbar-link">꿈 일지</a></li>
-            <li><a href="/community.html" class="navbar-link">커뮤니티 (게시판)</a></li>
-            <li id="nav-auth-section">
-                <!-- Auth content injected via JS -->
-            </li>
+            <ul class="navbar-nav" style="align-items: center;">
+                <li><a href="/dashboard.html" class="navbar-link">대시보드</a></li>
+                <li><a href="/dream-journal.html" class="navbar-link active">꿈 일지</a></li>
+                <li><a href="/community.html" class="navbar-link">게시판</a></li>
+                <li id="nav-auth-section">
+                    <!-- Auth content injected via JS -->
+                </li>
+            </ul>
         </div>
     </nav>
 
@@ -62,57 +65,7 @@
             window.location.href = '/auth.html';
         }
 
-        // Setup authenticated navigation
-        document.addEventListener('DOMContentLoaded', async () => {
-            const authSection = document.getElementById('nav-auth-section');
-            if (!authSection) return;
-
-            if (isAuthenticated()) {
-                try {
-                    const res = await authenticatedFetch(`${API_URL}/auth/me`);
-                    const user = await res.json();
-                    if (res.ok) {
-                        const avatarUrl = user.profile_image_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.username;
-                        const displayName = user.nickname || user.username;
-
-                        authSection.innerHTML = `
-                            <div class="user-profile-widget" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; position: relative;" onclick="toggleProfileMenu(event)">
-                                <img src="${avatarUrl}" alt="Profile" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--color-primary-light); object-fit: cover;">
-                                <span style="color: var(--color-text); font-weight: 500; font-size: 0.95rem;">${displayName}</span>
-                                
-                                <div id="nav-profile-menu" style="display: none; position: absolute; top: 120%; right: 0; background: var(--color-surface); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); padding: 0.5rem 0; min-width: 150px; box-shadow: var(--shadow-md); z-index: 1000;">
-                                    <a href="/dashboard.html" style="display: block; padding: 0.5rem 1rem; color: var(--color-text); text-decoration: none; font-size: 0.9rem;">내 정보</a>
-                                    <div style="height: 1px; background: var(--glass-border); margin: 0.25rem 0;"></div>
-                                    <a href="#" onclick="logout(); return false;" style="display: block; padding: 0.5rem 1rem; color: var(--color-error); text-decoration: none; font-size: 0.9rem;">로그아웃</a>
-                                </div>
-                            </div>
-                        `;
-                    }
-                } catch (e) {
-                    console.error('Failed to load user for nav', e);
-                    authSection.innerHTML = '<li><a href="#" class="navbar-link" onclick="logout()">로그아웃</a></li>';
-                }
-            } else {
-                authSection.innerHTML = '<li><a href="/auth.html" class="navbar-link">로그인</a></li>';
-            }
-        });
-
-        function toggleProfileMenu(e) {
-            e.stopPropagation();
-            const menu = document.getElementById('nav-profile-menu');
-            if (menu.style.display === 'none' || !menu.style.display) {
-                // close others if they existed
-                menu.style.display = 'block';
-            } else {
-                menu.style.display = 'none';
-            }
-        }
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', () => {
-            const menu = document.getElementById('nav-profile-menu');
-            if (menu) menu.style.display = 'none';
-        });
+        // Global navigation handles auth section
 
         // Load all dreams
         async function loadDreams() {

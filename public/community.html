@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>커뮤니티 - 꿈 분석기</title>
+    <title>게시판 - 꿈 분석기</title>
     <link rel="stylesheet" href="/styles/main.css">
     <style>
         .comment-section {
@@ -44,6 +44,7 @@
             text-decoration: underline;
         }
     </style>
+    <link rel="manifest" href="/manifest.json">
 </head>
 
 <body>
@@ -53,7 +54,7 @@
             <ul class="navbar-nav">
                 <li><a href="/dashboard.html" class="navbar-link">대시보드</a></li>
                 <li><a href="/dream-journal.html" class="navbar-link">꿈 일지</a></li>
-                <li><a href="/community.html" class="navbar-link active">커뮤니티 (게시판)</a></li>
+                <li><a href="/community.html" class="navbar-link active">게시판</a></li>
                 <li id="nav-auth-section">
                     <!-- Auth content injected via JS -->
                 </li>
@@ -62,18 +63,52 @@
     </nav>
 
     <div class="container" style="margin-top: 2rem;">
-        <div class="d-flex" style="justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-            <h1>🌐 꿈 공유 게시판</h1>
-            <p class="text-muted">다른 사람들과 신비로운 꿈 기록을 나누고 공감해보세요.</p>
+        <div class="tabs"
+            style="display: flex; gap: 2rem; border-bottom: 1px solid var(--glass-border); margin-bottom: 2rem; padding-bottom: 0.5rem;">
+            <button id="tabDreamShare"
+                style="background: none; border: none; font-size: 1.2rem; font-weight: bold; color: var(--color-accent); cursor: pointer; border-bottom: 2px solid var(--color-accent); padding-bottom: 0.5rem;"
+                onclick="switchTab('dreamShare')">💭 꿈공유</button>
+            <button id="tabBulletinBoard"
+                style="background: none; border: none; font-size: 1.2rem; font-weight: bold; color: var(--color-text-muted); cursor: pointer; padding-bottom: 0.5rem;"
+                onclick="switchTab('bulletinBoard')">📋 공지사항</button>
         </div>
 
-        <div id="loading" class="text-center" style="display: none; padding: 2rem;">
-            <div class="loading"></div>
-            <p class="mt-md text-muted">커뮤니티 꿈 불러오는 중...</p>
+        <div id="dreamShareSection">
+            <div class="d-flex" style="justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <p class="text-muted">다른 사람들과 신비로운 꿈 기록을 나누고 공감해보세요.</p>
+            </div>
+
+            <div id="loading" class="text-center" style="display: none; padding: 2rem;">
+                <div class="loading"></div>
+                <p class="mt-md text-muted">꿈 불러오는 중...</p>
+            </div>
+
+            <div id="communityList" style="display: grid; gap: 1.5rem;">
+                <!-- Public dreams injected here -->
+            </div>
         </div>
 
-        <div id="communityList" style="display: grid; gap: 1.5rem;">
-            <!-- Public dreams injected here -->
+        <div id="bulletinBoardSection" style="display: none;">
+            <div class="d-flex" style="justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <p class="text-muted">자유롭게 소식을 나누고 공유하는 공간입니다.</p>
+                <button class="btn btn-primary" id="btnOpenNoticeModal" style="display: none;"
+                    onclick="openNoticeModal()">글 작성하기</button>
+            </div>
+
+            <div id="noticeRequiredAuth" class="text-center p-md mb-lg"
+                style="background: var(--glass-bg); border-radius: var(--radius-md);">
+                <p class="text-muted m-0">글을 작성하려면 <a href="/auth.html" style="color: var(--color-accent);">로그인</a>이
+                    필요합니다.</p>
+            </div>
+
+            <div id="noticeLoading" class="text-center" style="display: none; padding: 2rem;">
+                <div class="loading"></div>
+                <p class="mt-md text-muted">게시글 불러오는 중...</p>
+            </div>
+
+            <div id="noticeList" style="display: grid; gap: 1.5rem;">
+                <!-- Posts injected here -->
+            </div>
         </div>
     </div>
 
@@ -88,59 +123,85 @@
         <p style="font-size: 0.9rem;">&copy; 2024 Dream Analyzer. All rights reserved.</p>
     </footer>
 
+    <div id="noticePostModal" class="modal hidden">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeNoticeModal()">&times;</button>
+            <h2 class="mb-md text-center">공지사항 글 등록</h2>
+            <form id="noticePostForm" onsubmit="submitNoticePost(event)">
+                <div class="form-group mb-sm">
+                    <label class="form-label" for="noticeTitle">제목</label>
+                    <input type="text" id="noticeTitle" class="form-input" placeholder="제목을 입력하세요" required>
+                </div>
+                <div class="form-group mb-sm">
+                    <label class="form-label" for="noticeContent">내용</label>
+                    <textarea id="noticeContent" class="form-textarea" placeholder="내용을 입력하세요..." required
+                        style="min-height: 150px;"></textarea>
+                </div>
+                <p id="noticePostMsg" class="text-center mt-sm" style="font-size: 0.9rem; margin-bottom: 1rem;"></p>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" class="btn btn-outline" onclick="closeNoticeModal()">취소</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmitNotice">글 등록</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="/js/app.js"></script>
     <script>
-        // Setup authenticated navigation
-        document.addEventListener('DOMContentLoaded', async () => {
-            const authSection = document.getElementById('nav-auth-section');
-            if (authSection) {
-                if (isAuthenticated()) {
-                    try {
-                        const res = await authenticatedFetch(`${API_URL}/auth/me`);
-                        const user = await res.json();
-                        if (res.ok) {
-                            const avatarUrl = user.profile_image_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.username;
-                            const displayName = user.nickname || user.username;
-
-                            authSection.innerHTML = `
-                                <div class="user-profile-widget" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; position: relative;" onclick="toggleProfileMenu(event)">
-                                    <img src="${avatarUrl}" alt="Profile" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--color-primary-light); object-fit: cover;">
-                                    <span style="color: var(--color-text); font-weight: 500; font-size: 0.95rem;">${displayName}</span>
-                                    
-                                    <div id="nav-profile-menu" style="display: none; position: absolute; top: 120%; right: 0; background: var(--color-surface); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); padding: 0.5rem 0; min-width: 150px; box-shadow: var(--shadow-md); z-index: 1000;">
-                                        <a href="/dashboard.html" style="display: block; padding: 0.5rem 1rem; color: var(--color-text); text-decoration: none; font-size: 0.9rem;">내 정보</a>
-                                        <div style="height: 1px; background: var(--glass-border); margin: 0.25rem 0;"></div>
-                                        <a href="#" onclick="logout(); return false;" style="display: block; padding: 0.5rem 1rem; color: var(--color-error); text-decoration: none; font-size: 0.9rem;">로그아웃</a>
-                                    </div>
-                                </div>
-                            `;
-                        }
-                    } catch (e) {
-                        console.error('Failed to load user for nav', e);
-                        authSection.innerHTML = '<li><a href="#" class="navbar-link" onclick="logout()">로그아웃</a></li>';
-                    }
-                } else {
-                    authSection.innerHTML = '<li><a href="/auth.html" class="navbar-link">로그인</a></li>';
-                }
-            }
+        document.addEventListener('DOMContentLoaded', () => {
             loadCommunityDreams();
         });
 
-        function toggleProfileMenu(e) {
-            e.stopPropagation();
-            const menu = document.getElementById('nav-profile-menu');
-            if (menu.style.display === 'none' || !menu.style.display) {
-                menu.style.display = 'block';
+        function switchTab(tabId) {
+            const btnDreamShare = document.getElementById('tabDreamShare');
+            const btnBulletin = document.getElementById('tabBulletinBoard');
+            const secDreamShare = document.getElementById('dreamShareSection');
+            const secBulletin = document.getElementById('bulletinBoardSection');
+
+            if (tabId === 'dreamShare') {
+                btnDreamShare.style.color = 'var(--color-accent)';
+                btnDreamShare.style.borderBottom = '2px solid var(--color-accent)';
+                btnBulletin.style.color = 'var(--color-text-muted)';
+                btnBulletin.style.borderBottom = 'none';
+
+                secDreamShare.style.display = 'block';
+                secBulletin.style.display = 'none';
             } else {
-                menu.style.display = 'none';
+                btnBulletin.style.color = 'var(--color-accent)';
+                btnBulletin.style.borderBottom = '2px solid var(--color-accent)';
+                btnDreamShare.style.color = 'var(--color-text-muted)';
+                btnDreamShare.style.borderBottom = 'none';
+
+                secBulletin.style.display = 'block';
+                secDreamShare.style.display = 'none';
+
+                if (!window.noticeLoaded) {
+                    loadNoticeBoard();
+                    window.noticeLoaded = true;
+                }
+
+                const btnWrite = document.getElementById('btnOpenNoticeModal');
+                const authReq = document.getElementById('noticeRequiredAuth');
+                if (isAuthenticated()) {
+                    if (btnWrite) btnWrite.style.display = 'block';
+                    if (authReq) authReq.style.display = 'none';
+                } else {
+                    if (btnWrite) btnWrite.style.display = 'none';
+                    if (authReq) authReq.style.display = 'block';
+                }
             }
         }
 
-        // Close dropdown when clicking outside
-        document.addEventListener('click', () => {
-            const menu = document.getElementById('nav-profile-menu');
-            if (menu) menu.style.display = 'none';
-        });
+        function openNoticeModal() {
+            document.getElementById('noticeTitle').value = '';
+            document.getElementById('noticeContent').value = '';
+            document.getElementById('noticePostMsg').textContent = '';
+            document.getElementById('noticePostModal').classList.remove('hidden');
+        }
+
+        function closeNoticeModal() {
+            document.getElementById('noticePostModal').classList.add('hidden');
+        }
 
         async function loadCommunityDreams() {
             showLoading('communityList');
@@ -416,6 +477,108 @@
             } catch (e) {
                 console.error('Comment error:', e);
                 alert('서버 오류로 댓글 작성에 실패했습니다.');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+        async function loadNoticeBoard() {
+            showLoading('noticeList');
+            try {
+                const response = await fetch(`${API_URL}/posts`);
+                const data = await response.json();
+
+                if (!response.ok) throw new Error(data.error || 'Failed to load posts');
+
+                const noticeList = document.getElementById('noticeList');
+                noticeList.innerHTML = '';
+
+                if (data.posts.length === 0) {
+                    noticeList.innerHTML = `
+                        <div class="card text-center" style="padding: 3rem;">
+                            <h3>📭 아직 등록된 글이 없습니다.</h3>
+                            <p class="text-muted">첫 번째 글을 작성해보세요!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                data.posts.forEach((post, index) => {
+                    const delay = index * 0.1;
+                    const card = document.createElement('div');
+                    card.className = 'card fade-in';
+                    card.style.animationDelay = `${delay}s`;
+
+                    const postDate = new Date(post.created_at).toLocaleString('ko-KR', {
+                        year: 'numeric', month: '2-digit', day: '2-digit',
+                        hour: '2-digit', minute: '2-digit'
+                    });
+
+                    const authorAvatarHtml = post.profile_image_url
+                        ? `<img src="${post.profile_image_url}" alt="avatar" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 5px;">`
+                        : '👤 ';
+
+                    card.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;">
+                            <h3 style="margin: 0; color: var(--color-accent); font-size: 1.2rem;">${post.title}</h3>
+                            <span class="text-muted" style="font-size: 0.85rem;">${postDate} • ${authorAvatarHtml}${post.display_name}</span>
+                        </div>
+                        <p style="color: var(--color-text); line-height: 1.6; margin-top: 1rem; white-space: pre-wrap;">${post.content}</p>
+                    `;
+                    noticeList.appendChild(card);
+                });
+
+            } catch (error) {
+                showError('noticeList', '게시글을 불러오는 데 실패했습니다.');
+                console.error(error);
+            }
+        }
+
+        async function submitNoticePost(event) {
+            event.preventDefault();
+
+            if (!isAuthenticated()) {
+                alert('로그인이 필요합니다.');
+                return;
+            }
+
+            const titleInput = document.getElementById('noticeTitle');
+            const contentInput = document.getElementById('noticeContent');
+            const btn = document.getElementById('btnSubmitNotice');
+            const msg = document.getElementById('noticePostMsg');
+
+            const title = titleInput.value.trim();
+            const content = contentInput.value.trim();
+
+            if (!title || !content) return;
+
+            btn.disabled = true;
+            msg.textContent = '';
+
+            try {
+                const res = await authenticatedFetch(`${API_URL}/posts`, {
+                    method: 'POST',
+                    body: JSON.stringify({ title, content })
+                });
+
+                if (res.ok) {
+                    titleInput.value = '';
+                    contentInput.value = '';
+                    msg.style.color = 'var(--color-success)';
+                    msg.textContent = '게시글이 성공적으로 등록되었습니다.';
+                    await loadNoticeBoard(); // Reload the list
+                    setTimeout(() => {
+                        msg.textContent = '';
+                        closeNoticeModal();
+                    }, 1000);
+                } else {
+                    const data = await res.json();
+                    msg.style.color = 'var(--color-error)';
+                    msg.textContent = data.error || '글 등록에 실패했습니다.';
+                }
+            } catch (e) {
+                console.error('Post error:', e);
+                msg.style.color = 'var(--color-error)';
+                msg.textContent = '서버 오류가 발생했습니다.';
             } finally {
                 btn.disabled = false;
             }

@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>대시보드 - 꿈 분석기</title>
     <link rel="stylesheet" href="/styles/main.css">
+  <link rel="manifest" href="/manifest.json">
 </head>
 
 <body>
@@ -15,14 +16,8 @@
             <ul class="navbar-nav" style="align-items: center;">
                 <li><a href="/dashboard.html" class="navbar-link">대시보드</a></li>
                 <li><a href="/dream-journal.html" class="navbar-link">꿈 일지</a></li>
-                <li><a href="/community.html" class="navbar-link">커뮤니티 (게시판)</a></li>
-                <li><a href="#" class="navbar-link" onclick="logout()">로그아웃</a></li>
-                <li style="display: flex; align-items: center; cursor: pointer; margin-left: 1rem;"
-                    onclick="openProfileModal()">
-                    <div id="navProfileImage"
-                        style="width: 35px; height: 35px; border-radius: 50%; background-color: var(--color-surface-light); background-size: cover; background-position: center; border: 2px solid var(--color-accent);">
-                    </div>
-                </li>
+                <li><a href="/community.html" class="navbar-link">게시판</a></li>
+                <li id="nav-auth-section"></li>
             </ul>
         </div>
     </nav>
@@ -75,56 +70,6 @@
     </div>
 
     <!-- Modals -->
-    <!-- Profile Edit Modal -->
-    <div id="profileModal" class="modal hidden">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeModals()">&times;</button>
-            <h2 class="mb-md text-center">개인정보 수정</h2>
-            <form id="profileForm" onsubmit="handleProfileSubmit(event)">
-                <div class="avatar-preview-container" id="avatarPreview"
-                    onclick="document.getElementById('profileImageUpload').click()">
-                    <span style="font-size: 2rem; color: rgba(255,255,255,0.3);" id="avatarPlaceholder">👤</span>
-                </div>
-                <div class="text-center text-muted" style="font-size: 0.8rem; margin-bottom: 1rem;">클릭하여 프로필 사진 등록</div>
-                <input type="file" id="profileImageUpload" accept="image/*" style="display: none;"
-                    onchange="previewAvatar(event)">
-
-                <div class="form-group mb-sm">
-                    <label class="form-label" for="profileNickname">별명 (게시판 표시용)</label>
-                    <input type="text" id="profileNickname" class="form-input" placeholder="새로운 별명을 입력하세요">
-                </div>
-
-                <div class="form-group mb-sm">
-                    <label class="form-label" for="profileEmail">이메일</label>
-                    <input type="email" id="profileEmail" class="form-input" placeholder="이메일 입력">
-                </div>
-
-                <div class="form-group mb-sm">
-                    <label class="form-label" for="profilePassword">새 비밀번호 (변경 원치 않음 시 빈칸 유지)</label>
-                    <input type="password" id="profilePassword" class="form-input" placeholder="새 비밀번호 입력 (선택)">
-                </div>
-
-                <div class="form-group mb-sm">
-                    <label class="form-label" for="profileBirthDate">생년월일</label>
-                    <input type="date" id="profileBirthDate" class="form-input">
-                </div>
-
-                <div class="form-group mb-lg">
-                    <label class="form-label" for="profileGender">성별</label>
-                    <select id="profileGender" class="form-select">
-                        <option value="">선택 안함</option>
-                        <option value="남성">남성</option>
-                        <option value="여성">여성</option>
-                        <option value="기타">기타</option>
-                    </select>
-                </div>
-
-                <div id="profileMessage" style="margin-bottom: 1rem; font-size: 0.9rem;"></div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;" id="btnUpdateProfile">프로필 수정
-                    완료</button>
-            </form>
-        </div>
-    </div>
 
     <!-- User Dreams List Modal -->
     <div id="dreamsModal" class="modal hidden">
@@ -184,19 +129,6 @@
             const user = getUser();
             if (user) {
                 document.getElementById('welcomeText').textContent = `환영합니다, ${user.nickname || user.username}님`;
-                document.getElementById('profileNickname').value = user.nickname || '';
-                document.getElementById('profileEmail').value = user.email || '';
-                document.getElementById('profileBirthDate').value = user.birth_date || '';
-                document.getElementById('profileGender').value = user.gender || '';
-
-                const profileImgElement = document.getElementById('navProfileImage');
-                if (user.profile_image_url) {
-                    profileImgElement.style.backgroundImage = `url(${user.profile_image_url})`;
-
-                    const avatarPreview = document.getElementById('avatarPreview');
-                    avatarPreview.style.backgroundImage = `url(${user.profile_image_url})`;
-                    document.getElementById('avatarPlaceholder').style.display = 'none';
-                }
             }
         }
         updateUIAfterLoad();
@@ -206,96 +138,6 @@
         // ------------------------------
         function closeModals() {
             document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden'));
-        }
-
-        function openProfileModal() {
-            closeModals();
-            document.getElementById('profileMessage').textContent = '';
-            document.getElementById('profileModal').classList.remove('hidden');
-        }
-
-        function previewAvatar(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const preview = document.getElementById('avatarPreview');
-                    preview.style.backgroundImage = `url(${e.target.result})`;
-                    document.getElementById('avatarPlaceholder').style.display = 'none';
-                }
-                reader.readAsDataURL(file);
-            }
-        }
-
-        async function handleProfileSubmit(event) {
-            event.preventDefault();
-            const nickname = document.getElementById('profileNickname').value;
-            const email = document.getElementById('profileEmail').value;
-            const password = document.getElementById('profilePassword').value;
-            const birth_date = document.getElementById('profileBirthDate').value;
-            const gender = document.getElementById('profileGender').value;
-
-            const imageFile = document.getElementById('profileImageUpload').files[0];
-            const msgDiv = document.getElementById('profileMessage');
-
-            msgDiv.textContent = '';
-            msgDiv.style.color = 'var(--color-text-primary)';
-
-            if (!nickname || nickname.trim() === '') {
-                msgDiv.textContent = '별명을 입력해주세요.';
-                msgDiv.style.color = 'var(--color-error)';
-                return;
-            }
-
-            if (!email || email.trim() === '') {
-                msgDiv.textContent = '이메일을 입력해주세요.';
-                msgDiv.style.color = 'var(--color-error)';
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('nickname', nickname.trim());
-            formData.append('email', email.trim());
-            if (password && password.trim() !== '') formData.append('password', password);
-            formData.append('birth_date', birth_date || '');
-            formData.append('gender', gender || '');
-
-            if (imageFile) {
-                formData.append('profile_image', imageFile);
-            }
-
-            document.getElementById('btnUpdateProfile').disabled = true;
-
-            try {
-                const token = localStorage.getItem('token');
-                // Use fetch directly for FormData to avoid default JSON stringification
-                const res = await fetch(`${API_URL}/auth/profile`, {
-                    method: 'PUT',
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    body: formData
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    localStorage.setItem('user', JSON.stringify(data.user));
-
-                    msgDiv.textContent = '프로필이 성공적으로 수정되었습니다.';
-                    msgDiv.style.color = 'var(--color-success)';
-                    document.getElementById('profilePassword').value = ''; // Reset password field
-                    updateUIAfterLoad();
-
-                    setTimeout(closeModals, 1500);
-                } else {
-                    const data = await res.json();
-                    msgDiv.textContent = data.error || '프로필 수정 실패';
-                    msgDiv.style.color = 'var(--color-error)';
-                }
-            } catch (e) {
-                msgDiv.textContent = '서버 통신 오류가 발생했습니다.';
-                msgDiv.style.color = 'var(--color-error)';
-            } finally {
-                document.getElementById('btnUpdateProfile').disabled = false;
-            }
         }
 
         async function openDreamsModal() {
