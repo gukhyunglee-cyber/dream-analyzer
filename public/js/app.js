@@ -195,7 +195,7 @@ async function setupGlobalProfileNav() {
                 
                 <div id="global-nav-profile-menu" style="display: none; position: absolute; top: 120%; right: 0; background: var(--color-surface); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); padding: 0.5rem 0; min-width: 150px; box-shadow: var(--shadow-md); z-index: 1000; text-align: left;">
                     <a href="#" onclick="openGlobalProfileModal(event)" style="display: block; padding: 0.5rem 1rem; color: var(--color-text); text-decoration: none; font-size: 0.9rem;">내정보</a>
-                    <div style="padding: 0.2rem 1rem 0.5rem 1rem; color: var(--color-text-muted); font-size: 0.75rem; cursor: default;">웹 버전 v2.2.0</div>
+                    <div style="padding: 0.2rem 1rem 0.5rem 1rem; color: var(--color-text-muted); font-size: 0.75rem; cursor: default;">웹 버전 v2.3.0</div>
                     <div style="height: 1px; background: var(--glass-border); margin: 0.25rem 0;"></div>
                     <a href="#" onclick="confirmGlobalLogout(event)" style="display: block; padding: 0.5rem 1rem; color: var(--color-error); text-decoration: none; font-size: 0.9rem;">로그아웃</a>
                 </div>

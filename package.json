@@ -1,6 +1,6 @@
 {
   "name": "dream-analyzer",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Jung-based dream analysis and psychological state tracking system",
   "main": "server.js",
   "scripts": {
