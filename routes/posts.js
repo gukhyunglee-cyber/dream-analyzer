@@ -11,7 +11,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     try {
         const result = await db.query(`
-            SELECT p.id, p.title, p.content, p.created_at, u.username as author_name, u.nickname as author_nickname, u.profile_image_url
+            SELECT p.id, p.title, p.content, p.created_at, p.user_id, u.username as author_name, u.nickname as author_nickname, u.profile_image_url
             FROM posts p
             JOIN users u ON p.user_id = u.id
             ORDER BY p.created_at DESC
@@ -52,6 +52,64 @@ router.post('/', authenticateToken, async (req, res) => {
         });
     } catch (error) {
         console.error('Post creation error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+/**
+ * PUT /api/posts/:postId
+ * Update a post
+ */
+router.put('/:postId', authenticateToken, async (req, res) => {
+    const postId = req.params.postId;
+    const { title, content } = req.body;
+
+    if (!title || !content) {
+        return res.status(400).json({ error: 'Title and content are required' });
+    }
+
+    try {
+        const post = await db.get('SELECT user_id FROM posts WHERE id = ?', [postId]);
+        if (!post) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
+        if (post.user_id !== req.user.id) {
+            return res.status(403).json({ error: 'Unauthorized to edit this post' });
+        }
+
+        await db.query(
+            'UPDATE posts SET title = ?, content = ? WHERE id = ?',
+            [title, content, postId]
+        );
+
+        res.json({ message: 'Post updated successfully' });
+    } catch (error) {
+        console.error('Post update error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+/**
+ * DELETE /api/posts/:postId
+ * Delete a post
+ */
+router.delete('/:postId', authenticateToken, async (req, res) => {
+    const postId = req.params.postId;
+
+    try {
+        const post = await db.get('SELECT user_id FROM posts WHERE id = ?', [postId]);
+        if (!post) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
+        if (post.user_id !== req.user.id && !req.user.is_admin) {
+            return res.status(403).json({ error: 'Unauthorized to delete this post' });
+        }
+
+        await db.query('DELETE FROM posts WHERE id = ?', [postId]);
+
+        res.json({ message: 'Post deleted successfully' });
+    } catch (error) {
+        console.error('Post deletion error:', error);
         res.status(500).json({ error: 'Server error' });
     }
 });

@@ -317,6 +317,10 @@ p {
   color: var(--color-accent);
 }
 
+.navbar-link.active {
+  display: none;
+}
+
 /* ========================================
    Utility Classes
    ======================================== */

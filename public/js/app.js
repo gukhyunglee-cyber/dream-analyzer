@@ -17,8 +17,8 @@ function isAuthenticated() {
     return !!getToken();
 }
 
-// Logout
 function logout() {
+    if (!confirm('로그아웃 하시겠습니까?')) return;
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.href = '/auth.html';
@@ -184,16 +184,18 @@ async function setupGlobalProfileNav() {
             const avatarUrl = user.profile_image_url || '';
             let avatarContent = avatarUrl
                 ? `<img src="${avatarUrl}" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`
-                : `<svg viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
+                : `<svg viewBox="0 0 24 24" fill="#333" style="width: 20px; height: 20px;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
 
             const profileHtml = `
-            <div class="user-profile-widget" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; position: relative;" onclick="toggleGlobalProfileMenu(event)">
+            <div class="user-profile-widget" style="display: flex; flex-direction: column; align-items: center; gap: 0.2rem; cursor: pointer; position: relative; margin-top: -5px;" onclick="toggleGlobalProfileMenu(event)">
                 <div style="width: 35px; height: 35px; border-radius: 50%; background-color: #ffd700; border: 2px solid var(--color-primary-light); display: flex; align-items: center; justify-content: center; overflow: hidden;">
                     ${avatarContent}
                 </div>
+                <span style="font-size: 0.75rem; color: var(--color-text-secondary); line-height: 1;">${user.nickname}</span>
                 
                 <div id="global-nav-profile-menu" style="display: none; position: absolute; top: 120%; right: 0; background: var(--color-surface); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); padding: 0.5rem 0; min-width: 150px; box-shadow: var(--shadow-md); z-index: 1000; text-align: left;">
                     <a href="#" onclick="openGlobalProfileModal(event)" style="display: block; padding: 0.5rem 1rem; color: var(--color-text); text-decoration: none; font-size: 0.9rem;">내정보</a>
+                    <div style="padding: 0.2rem 1rem 0.5rem 1rem; color: var(--color-text-muted); font-size: 0.75rem; cursor: default;">웹 버전 v2.2.0</div>
                     <div style="height: 1px; background: var(--glass-border); margin: 0.25rem 0;"></div>
                     <a href="#" onclick="confirmGlobalLogout(event)" style="display: block; padding: 0.5rem 1rem; color: var(--color-error); text-decoration: none; font-size: 0.9rem;">로그아웃</a>
                 </div>

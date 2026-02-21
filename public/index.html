@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>꿈 분석기 - 융 이론 기반 꿈 해석</title>
+  <title>꿈 여행 - 융 이론 기반 꿈 해석</title>
   <meta name="description" content="칼 융의 이론을 기반으로 한 꿈 분석 및 심리 상태 추적 플랫폼">
   <link rel="stylesheet" href="/styles/main.css">
   <link rel="manifest" href="/manifest.json">
@@ -168,7 +168,7 @@
   <!-- Footer -->
   <footer
     style="background: var(--color-surface); padding: 2rem; text-align: center; margin-top: 4rem; border-top: 1px solid var(--glass-border);">
-    <p class="text-muted">© 2026 꿈 분석기. 칼 융의 분석심리학을 기반으로 합니다.</p>
+    <p class="text-muted">© 2026 꿈 여행. 칼 융의 분석심리학을 기반으로 합니다.</p>
   </footer>
 
   <!-- Global Footer -->
@@ -189,8 +189,12 @@
         const authButtons = document.querySelector('.hero-buttons');
         if (authButtons) {
           authButtons.innerHTML = `
-            <a href="/dashboard.html" class="btn btn-primary" style="font-size: 1.1rem; padding: 1rem 2rem;">대시보드로 가기</a>
-            <button onclick="logout()" class="btn btn-outline" style="font-size: 1.1rem; padding: 1rem 2rem;">로그아웃</button>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center;">
+              <a href="/community.html" class="btn btn-primary" style="font-size: 1.1rem; padding: 1rem 2rem;">게시판</a>
+              <a href="/dream-journal.html" class="btn btn-primary" style="font-size: 1.1rem; padding: 1rem 2rem;">꿈일지</a>
+              <a href="/dashboard.html" class="btn btn-primary" style="font-size: 1.1rem; padding: 1rem 2rem;">대시보드</a>
+              <button onclick="logout()" class="btn btn-outline" style="font-size: 1.1rem; padding: 1rem 2rem;">로그아웃</button>
+            </div>
             `;
         }
 

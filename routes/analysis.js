@@ -77,10 +77,17 @@ router.post('/analyze', authenticateToken, async (req, res) => {
             return res.status(404).json({ error: 'Dream not found' });
         }
 
+        const pastDreamsResult = await db.query(
+            'SELECT date, title, content FROM dreams WHERE user_id = ? AND id != ? ORDER BY date DESC LIMIT 5',
+            [req.user.id, dreamId]
+        );
+        const pastDreams = pastDreamsResult.rows || pastDreamsResult;
+
         // Prepare user info for analysis
         const userInfo = {
             birth_date: dream.birth_date,
-            gender: dream.gender
+            gender: dream.gender,
+            past_dreams: pastDreams
         };
 
         // Call AI service

@@ -136,7 +136,7 @@ router.get('/:dreamId/comments', async (req, res) => {
 
     try {
         const result = await db.query(`
-            SELECT c.id, c.content, c.parent_id, c.created_at, u.username as author_name, u.nickname as author_nickname, u.profile_image_url
+            SELECT c.id, c.content, c.parent_id, c.created_at, c.user_id, u.username as author_name, u.nickname as author_nickname, u.profile_image_url
             FROM comments c
             JOIN users u ON c.user_id = u.id
             WHERE c.dream_id = ?
@@ -214,6 +214,68 @@ router.post('/:dreamId/comments', authenticateToken, async (req, res) => {
         });
     } catch (error) {
         console.error('Comment creation error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+/**
+ * PUT /api/community/comments/:commentId
+ * Update a comment
+ */
+router.put('/comments/:commentId', authenticateToken, async (req, res) => {
+    const commentId = req.params.commentId;
+    const { content } = req.body;
+
+    if (!content || content.trim() === '') {
+        return res.status(400).json({ error: 'Comment content is required' });
+    }
+
+    try {
+        const comment = await db.get('SELECT user_id FROM comments WHERE id = ?', [commentId]);
+        if (!comment) {
+            return res.status(404).json({ error: 'Comment not found' });
+        }
+        if (comment.user_id !== req.user.id) {
+            return res.status(403).json({ error: 'Unauthorized to edit this comment' });
+        }
+
+        await db.query(
+            'UPDATE comments SET content = ? WHERE id = ?',
+            [content.trim(), commentId]
+        );
+
+        res.json({ message: 'Comment updated successfully' });
+    } catch (error) {
+        console.error('Comment update error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+/**
+ * DELETE /api/community/comments/:commentId
+ * Delete a comment
+ */
+router.delete('/comments/:commentId', authenticateToken, async (req, res) => {
+    const commentId = req.params.commentId;
+
+    try {
+        const comment = await db.get('SELECT user_id FROM comments WHERE id = ?', [commentId]);
+        if (!comment) {
+            return res.status(404).json({ error: 'Comment not found' });
+        }
+        if (comment.user_id !== req.user.id && !req.user.is_admin) {
+            return res.status(403).json({ error: 'Unauthorized to delete this comment' });
+        }
+
+        // Deleting a comment will cascade or leave orphaned children depending on DB setup.
+        // It's safer to delete any child comments first or rely on CASCADE.
+        // Normally, a real app would use ON DELETE CASCADE. Assuming cascade or manual cleanup:
+        await db.query('DELETE FROM comments WHERE parent_id = ?', [commentId]);
+        await db.query('DELETE FROM comments WHERE id = ?', [commentId]);
+
+        res.json({ message: 'Comment deleted successfully' });
+    } catch (error) {
+        console.error('Comment deletion error:', error);
         res.status(500).json({ error: 'Server error' });
     }
 });

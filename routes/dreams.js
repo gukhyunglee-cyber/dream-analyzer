@@ -147,10 +147,15 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     const dreamId = req.params.id;
 
     try {
-        const result = await db.query(
-            'DELETE FROM dreams WHERE id = ? AND user_id = ?',
-            [dreamId, req.user.id]
-        );
+        let query = 'DELETE FROM dreams WHERE id = ? AND user_id = ?';
+        let params = [dreamId, req.user.id];
+
+        if (req.user.is_admin) {
+            query = 'DELETE FROM dreams WHERE id = ?';
+            params = [dreamId];
+        }
+
+        const result = await db.query(query, params);
 
         if (result.rowCount === 0) {
             return res.status(404).json({ error: 'Dream not found' });

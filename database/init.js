@@ -17,6 +17,7 @@ async function initDatabase() {
                 birth_date VARCHAR(50),
                 gender VARCHAR(50),
                 profile_image_url VARCHAR(500),
+                is_admin BOOLEAN DEFAULT false,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )` :
       `CREATE TABLE IF NOT EXISTS users (
@@ -28,6 +29,7 @@ async function initDatabase() {
                 birth_date TEXT,
                 gender TEXT,
                 profile_image_url TEXT,
+                is_admin INTEGER DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )`;
 
@@ -52,6 +54,17 @@ async function initDatabase() {
         await db.query(`ALTER TABLE users ADD COLUMN profile_image_url TEXT`);
       }
       console.log('Added profile_image_url column to users table');
+    } catch (err) {
+      // Column likely exists, ignore
+    }
+
+    try {
+      if (isPg) {
+        await db.query(`ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT false`);
+      } else {
+        await db.query(`ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0`);
+      }
+      console.log('Added is_admin column to users table');
     } catch (err) {
       // Column likely exists, ignore
     }

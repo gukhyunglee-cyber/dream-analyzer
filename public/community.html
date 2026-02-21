@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>게시판 - 꿈 분석기</title>
+    <title>게시판 - 꿈 여행</title>
     <link rel="stylesheet" href="/styles/main.css">
     <style>
         .comment-section {
@@ -50,11 +50,11 @@
 <body>
     <nav class="navbar">
         <div class="navbar-content">
-            <a href="/index.html" class="navbar-brand">🌙 꿈 분석기</a>
+            <a href="/index.html" class="navbar-brand">🌙 꿈 여행</a>
             <ul class="navbar-nav">
-                <li><a href="/dashboard.html" class="navbar-link">대시보드</a></li>
-                <li><a href="/dream-journal.html" class="navbar-link">꿈 일지</a></li>
                 <li><a href="/community.html" class="navbar-link active">게시판</a></li>
+                <li><a href="/dream-journal.html" class="navbar-link">꿈 일지</a></li>
+                <li><a href="/dashboard.html" class="navbar-link">대시보드</a></li>
                 <li id="nav-auth-section">
                     <!-- Auth content injected via JS -->
                 </li>
@@ -65,15 +65,15 @@
     <div class="container" style="margin-top: 2rem;">
         <div class="tabs"
             style="display: flex; gap: 2rem; border-bottom: 1px solid var(--glass-border); margin-bottom: 2rem; padding-bottom: 0.5rem;">
-            <button id="tabDreamShare"
-                style="background: none; border: none; font-size: 1.2rem; font-weight: bold; color: var(--color-accent); cursor: pointer; border-bottom: 2px solid var(--color-accent); padding-bottom: 0.5rem;"
-                onclick="switchTab('dreamShare')">💭 꿈공유</button>
             <button id="tabBulletinBoard"
-                style="background: none; border: none; font-size: 1.2rem; font-weight: bold; color: var(--color-text-muted); cursor: pointer; padding-bottom: 0.5rem;"
+                style="background: none; border: none; font-size: 1.2rem; font-weight: bold; color: var(--color-accent); cursor: pointer; border-bottom: 2px solid var(--color-accent); padding-bottom: 0.5rem;"
                 onclick="switchTab('bulletinBoard')">📋 공지사항</button>
+            <button id="tabDreamShare"
+                style="background: none; border: none; font-size: 1.2rem; font-weight: bold; color: var(--color-text-muted); cursor: pointer; padding-bottom: 0.5rem;"
+                onclick="switchTab('dreamShare')">💭 꿈공유</button>
         </div>
 
-        <div id="dreamShareSection">
+        <div id="dreamShareSection" style="display: none;">
             <div class="d-flex" style="justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                 <p class="text-muted">다른 사람들과 신비로운 꿈 기록을 나누고 공감해보세요.</p>
             </div>
@@ -88,7 +88,7 @@
             </div>
         </div>
 
-        <div id="bulletinBoardSection" style="display: none;">
+        <div id="bulletinBoardSection">
             <div class="d-flex" style="justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                 <p class="text-muted">자유롭게 소식을 나누고 공유하는 공간입니다.</p>
                 <button class="btn btn-primary" id="btnOpenNoticeModal" style="display: none;"
@@ -149,7 +149,7 @@
     <script src="/js/app.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            loadCommunityDreams();
+            switchTab('bulletinBoard');
         });
 
         function switchTab(tabId) {
@@ -166,6 +166,11 @@
 
                 secDreamShare.style.display = 'block';
                 secBulletin.style.display = 'none';
+
+                if (!window.dreamShareLoaded) {
+                    loadCommunityDreams();
+                    window.dreamShareLoaded = true;
+                }
             } else {
                 btnBulletin.style.color = 'var(--color-accent)';
                 btnBulletin.style.borderBottom = '2px solid var(--color-accent)';
@@ -196,6 +201,7 @@
             document.getElementById('noticeTitle').value = '';
             document.getElementById('noticeContent').value = '';
             document.getElementById('noticePostMsg').textContent = '';
+            delete document.getElementById('noticePostForm').dataset.editingId;
             document.getElementById('noticePostModal').classList.remove('hidden');
         }
 
@@ -257,17 +263,29 @@
                         ? `<img src="${dream.profile_image_url}" alt="avatar" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 5px;">`
                         : '👤 ';
 
+                    const currentUser = getUser();
+                    const isOwner = currentUser && currentUser.id === dream.user_id;
+                    const isAdmin = currentUser && currentUser.is_admin;
+
+                    let adminDeleteHtml = '';
+                    if (isAdmin || isOwner) {
+                        adminDeleteHtml = `<button class="btn btn-outline btn-sm" style="color: var(--color-error); border-color: var(--color-error); padding: 0.1rem 0.4rem; font-size: 0.75rem; margin-left: 0.5rem;" onclick="deleteDream(${dream.id})">삭제</button>`;
+                    }
+
                     card.innerHTML = `
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                            <h3 style="margin: 0; color: var(--color-accent);">${dream.title}</h3>
+                            <h3 style="margin: 0; color: var(--color-accent);">${dream.title} ${adminDeleteHtml}</h3>
                             <span class="text-muted" style="font-size: 0.85rem;">${dreamDate} • ${authorAvatarHtml}${dream.display_name}</span>
                         </div>
                         ${emotionsHtml}
                         <p style="color: var(--color-text); line-height: 1.6; margin-bottom: 1rem;">${dream.content}</p>
                         ${dream.overall_interpretation ? `
-                        <div style="background: var(--color-surface); padding: 1rem; border-radius: var(--radius-sm); border-left: 3px solid var(--color-accent); margin-bottom: 1rem;">
+                        <div style="text-align: right; margin-bottom: 0.5rem;">
+                            <button class="btn btn-outline btn-sm" onclick="toggleInterpretation(${dream.id}, this)" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">✨ 전체해석 보기</button>
+                        </div>
+                        <div id="interpretation-${dream.id}" style="display: none; background: var(--color-surface); padding: 1rem; border-radius: var(--radius-sm); border-left: 3px solid var(--color-accent); margin-bottom: 1rem;">
                             <h4 style="color: var(--color-accent); margin-bottom: 0.5rem; font-size: 0.95rem;">✨ 전체 해석</h4>
-                            <p style="font-size: 0.9rem; color: var(--color-text); margin: 0; line-height: 1.6;">${dream.overall_interpretation}</p>
+                            <p style="font-size: 0.9rem; color: var(--color-text); margin: 0; line-height: 1.6; white-space: pre-wrap;">${dream.overall_interpretation}</p>
                         </div>
                         ` : ''}
                         
@@ -327,6 +345,17 @@
 
             // Fetch comments
             await loadComments(dreamId);
+        }
+
+        function toggleInterpretation(dreamId, btnElement) {
+            const interpretSection = document.getElementById(`interpretation-${dreamId}`);
+            if (interpretSection.style.display === 'block') {
+                interpretSection.style.display = 'none';
+                btnElement.textContent = '✨ 전체해석 보기';
+            } else {
+                interpretSection.style.display = 'block';
+                btnElement.textContent = '숨기기';
+            }
         }
 
         async function toggleReaction(targetType, targetId, emoji) {
@@ -390,18 +419,35 @@
                 ? `<img src="${c.profile_image_url}" alt="avatar" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 5px;">`
                 : '👤 ';
 
+            const currentUser = getUser();
+            const isOwner = currentUser && currentUser.id === c.user_id;
+            const isAdmin = currentUser && currentUser.is_admin;
+            let editDeleteHtml = '';
+
+            if (isOwner) {
+                editDeleteHtml = `
+                <button class="btn btn-outline" style="padding: 0.1rem 0.4rem; font-size: 0.75rem;" onclick="editComment(${dreamId}, ${c.id}, this)">수정</button>
+                <button class="btn btn-outline" style="padding: 0.1rem 0.4rem; font-size: 0.75rem; color: var(--color-error); border-color: var(--color-error);" onclick="deleteComment(${dreamId}, ${c.id})">삭제</button>
+                `;
+            } else if (isAdmin) {
+                editDeleteHtml = `
+                <button class="btn btn-outline" style="padding: 0.1rem 0.4rem; font-size: 0.75rem; color: var(--color-error); border-color: var(--color-error);" onclick="deleteComment(${dreamId}, ${c.id})">삭제</button>
+                `;
+            }
+
             let html = `
                 <div class="comment-item" style="${depthStyle}">
                     <div class="comment-meta">
                         <strong>${authorAvatarHtml}${c.display_name}</strong>
                         <span>${date}</span>
                     </div>
-                    <p style="margin-bottom: 0.5rem;">${c.content}</p>
+                    <p id="comment-text-${c.id}" style="margin-bottom: 0.5rem; white-space: pre-wrap;">${c.content}</p>
                     
                     <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
                         <button class="btn btn-outline" style="padding: 0.1rem 0.4rem; font-size: 0.75rem;" onclick="toggleReaction('comment', ${c.id}, '👍')">👍 ${r['👍'] || 0}</button>
                         <button class="btn btn-outline" style="padding: 0.1rem 0.4rem; font-size: 0.75rem;" onclick="toggleReaction('comment', ${c.id}, '❤️')">❤️ ${r['❤️'] || 0}</button>
-                        <button class="btn-toggle-comments" style="font-size: 0.8rem; margin-left: 0.5rem;" onclick="document.getElementById('reply-box-${c.id}').style.display = 'flex'">↩️ 답글달기</button>
+                        <button class="btn-toggle-comments" style="font-size: 0.8rem; margin-left: 0.5rem;" onclick="const rb = document.getElementById('reply-box-${c.id}'); rb.style.display = (rb.style.display === 'none' || !rb.style.display) ? 'flex' : 'none';">↩️ 답글달기</button>
+                        ${editDeleteHtml}
                     </div>
 
                     <div id="reply-box-${c.id}" style="display: none; gap: 0.5rem; margin-top: 0.5rem;">
@@ -481,6 +527,72 @@
                 btn.disabled = false;
             }
         }
+
+        async function editComment(dreamId, commentId, btnElement) {
+            const pElement = document.getElementById(`comment-text-${commentId}`);
+            const originalContent = pElement.textContent;
+            const newContent = prompt('댓글 수정:', originalContent);
+            if (newContent === null || newContent.trim() === '' || newContent === originalContent) return;
+
+            try {
+                const res = await authenticatedFetch(`${API_URL}/community/comments/${commentId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ content: newContent.trim() })
+                });
+
+                if (res.ok) {
+                    await loadComments(dreamId);
+                } else {
+                    const data = await res.json();
+                    alert(data.error || '댓글 수정 실패');
+                }
+            } catch (e) {
+                alert('서버 오류로 댓글 수정에 실패했습니다.');
+            }
+        }
+
+        async function deleteComment(dreamId, commentId) {
+            if (!confirm('정말 삭제하시겠습니까?')) return;
+
+            try {
+                const res = await authenticatedFetch(`${API_URL}/community/comments/${commentId}`, {
+                    method: 'DELETE'
+                });
+
+                if (res.ok) {
+                    await loadComments(dreamId);
+                } else {
+                    const data = await res.json();
+                    alert(data.error || '댓글 삭제 실패');
+                }
+            } catch (e) {
+                alert('서버 오류로 댓글 삭제에 실패했습니다.');
+            }
+        }
+
+        async function deleteDream(dreamId) {
+            if (!confirm('정말로 이 꿈 공유를 삭제하시겠습니까?')) return;
+
+            try {
+                const response = await fetch(`${API_URL}/dreams/${dreamId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('dream_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    loadCommunityDreams();
+                } else {
+                    const data = await response.json();
+                    alert(data.error || '삭제 실패');
+                }
+            } catch (error) {
+                console.error('Dream deletion error:', error);
+                alert('서버 오류로 삭제에 실패했습니다.');
+            }
+        }
+
         async function loadNoticeBoard() {
             showLoading('noticeList');
             try {
@@ -517,12 +629,35 @@
                         ? `<img src="${post.profile_image_url}" alt="avatar" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 5px;">`
                         : '👤 ';
 
+                    const currentUser = getUser();
+                    const isOwner = currentUser && currentUser.id === post.user_id;
+                    const isAdmin = currentUser && currentUser.is_admin;
+                    let editDeleteHtml = '';
+
+                    if (isOwner) {
+                        editDeleteHtml = `
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-outline btn-sm" onclick="editNoticePost(${post.id})" style="padding: 0.2rem 0.5rem;">수정</button>
+                            <button class="btn btn-outline btn-sm" style="color: var(--color-error); border-color: var(--color-error); padding: 0.2rem 0.5rem;" onclick="deleteNoticePost(${post.id})">삭제</button>
+                        </div>
+                        `;
+                    } else if (isAdmin) {
+                        editDeleteHtml = `
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-outline btn-sm" style="color: var(--color-error); border-color: var(--color-error); padding: 0.2rem 0.5rem;" onclick="deleteNoticePost(${post.id})">삭제</button>
+                        </div>
+                        `;
+                    }
+
                     card.innerHTML = `
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;">
-                            <h3 style="margin: 0; color: var(--color-accent); font-size: 1.2rem;">${post.title}</h3>
-                            <span class="text-muted" style="font-size: 0.85rem;">${postDate} • ${authorAvatarHtml}${post.display_name}</span>
+                            <div>
+                                <h3 id="notice-title-${post.id}" style="margin: 0; color: var(--color-accent); font-size: 1.2rem;">${post.title}</h3>
+                                <span class="text-muted" style="font-size: 0.85rem;">${postDate} • ${authorAvatarHtml}${post.display_name}</span>
+                            </div>
+                            ${editDeleteHtml}
                         </div>
-                        <p style="color: var(--color-text); line-height: 1.6; margin-top: 1rem; white-space: pre-wrap;">${post.content}</p>
+                        <p id="notice-content-${post.id}" style="color: var(--color-text); line-height: 1.6; margin-top: 1rem; white-space: pre-wrap;">${post.content}</p>
                     `;
                     noticeList.appendChild(card);
                 });
@@ -548,6 +683,7 @@
 
             const title = titleInput.value.trim();
             const content = contentInput.value.trim();
+            const noticeId = document.getElementById('noticePostForm').dataset.editingId;
 
             if (!title || !content) return;
 
@@ -555,8 +691,16 @@
             msg.textContent = '';
 
             try {
-                const res = await authenticatedFetch(`${API_URL}/posts`, {
-                    method: 'POST',
+                let url = `${API_URL}/posts`;
+                let method = 'POST';
+
+                if (noticeId) {
+                    url = `${API_URL}/posts/${noticeId}`;
+                    method = 'PUT';
+                }
+
+                const res = await authenticatedFetch(url, {
+                    method: method,
                     body: JSON.stringify({ title, content })
                 });
 
@@ -581,6 +725,38 @@
                 msg.textContent = '서버 오류가 발생했습니다.';
             } finally {
                 btn.disabled = false;
+            }
+        }
+
+        function editNoticePost(postId) {
+            const title = document.getElementById(`notice-title-${postId}`).textContent;
+            const content = document.getElementById(`notice-content-${postId}`).textContent;
+
+            document.getElementById('noticeTitle').value = title;
+            document.getElementById('noticeContent').value = content;
+            document.getElementById('noticePostMsg').textContent = '';
+            document.getElementById('noticePostModal').classList.remove('hidden');
+
+            // Mark form as editing
+            document.getElementById('noticePostForm').dataset.editingId = postId;
+        }
+
+        async function deleteNoticePost(postId) {
+            if (!confirm('정말 삭제하시겠습니까?')) return;
+
+            try {
+                const res = await authenticatedFetch(`${API_URL}/posts/${postId}`, {
+                    method: 'DELETE'
+                });
+
+                if (res.ok) {
+                    await loadNoticeBoard();
+                } else {
+                    const data = await res.json();
+                    alert(data.error || '게시글 삭제 실패');
+                }
+            } catch (e) {
+                alert('서버 오류로 게시글 삭제에 실패했습니다.');
             }
         }
     </script>

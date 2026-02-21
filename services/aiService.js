@@ -69,6 +69,7 @@ Key Analysis Requirements (Translate concepts into everyday language):
 2. **Symbolism**: Interpret symbols by connecting them to the dreamer's daily life, emotions, and psychological state, using relatable analogies.
 3. **Individuation**: Instead of "Individuation", talk about "자아 성장과 진정한 내 모습을 찾아가는 과정" (The process of personal growth and finding one's true self).
 4. **Emotional Tone**: Analyze the emotions felt in the dream and offer warm, counseling-style comfort.
+5. **Continuous Analysis**: If past dreams are provided, connect the current dream to them. Identify recurring themes or show how the psychological state has evolved over time.
 
 Tone:
 - Warm, empathetic, encouraging, and easy to read (like a friendly counseling session).
@@ -151,7 +152,7 @@ Language: Korean (Natural, warm, comforting and VERY EASY Korean).`
      * Build Jungian analysis prompt
      */
     buildJungianPrompt(dreamContent, userInfo) {
-        const { birth_date, gender } = userInfo;
+        const { birth_date, gender, past_dreams } = userInfo;
 
         let prompt = `Please analyze the following dream from a Jungian perspective:\n\n`;
         prompt += `Dream Content:\n${dreamContent}\n\n`;
@@ -161,6 +162,14 @@ Language: Korean (Natural, warm, comforting and VERY EASY Korean).`
         }
         if (gender) {
             prompt += `Gender: ${gender}\n`;
+        }
+
+        if (past_dreams && past_dreams.length > 0) {
+            prompt += `\n--- Past Dreams of the User ---\n`;
+            past_dreams.forEach((pd, index) => {
+                prompt += `Dream ${index + 1} (${pd.date}):\nTitle: ${pd.title}\nContent: ${pd.content}\n\n`;
+            });
+            prompt += `Please analyze the NEW dream not just in isolation, but on a continuum with these past dreams. Discuss any recurring symbols, themes, or the progression of the user's individuation process and psychological growth based on Jung's theory.\n`;
         }
 
         prompt += `\nProvide a warm, easy-to-understand psychological analysis focusing on inner symbols, emotions, and the journey to finding one's true self.`;

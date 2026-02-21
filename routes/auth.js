@@ -66,7 +66,7 @@ router.post('/register', async (req, res) => {
         res.status(201).json({
             message: 'User created successfully',
             token,
-            user: { id: userId, username, nickname, email, profile_image_url: null }
+            user: { id: userId, username, nickname, email, profile_image_url: null, is_admin: 0 }
         });
 
     } catch (error) {
@@ -101,7 +101,7 @@ router.post('/login', async (req, res) => {
 
         // Generate JWT token
         const token = jwt.sign(
-            { id: user.id, username: user.username, nickname: user.nickname, email: user.email, profile_image_url: user.profile_image_url },
+            { id: user.id, username: user.username, nickname: user.nickname, email: user.email, profile_image_url: user.profile_image_url, is_admin: user.is_admin },
             process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
@@ -116,7 +116,8 @@ router.post('/login', async (req, res) => {
                 email: user.email,
                 birth_date: user.birth_date,
                 gender: user.gender,
-                profile_image_url: user.profile_image_url
+                profile_image_url: user.profile_image_url,
+                is_admin: user.is_admin
             }
         });
     } catch (error) {
@@ -132,7 +133,7 @@ router.post('/login', async (req, res) => {
 router.get('/profile', authenticateToken, async (req, res) => {
     try {
         const user = await db.get(
-            'SELECT id, username, nickname, email, birth_date, gender, profile_image_url, created_at FROM users WHERE id = ?',
+            'SELECT id, username, nickname, email, birth_date, gender, profile_image_url, is_admin, created_at FROM users WHERE id = ?',
             [req.user.id]
         );
 
@@ -140,6 +141,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
+        res.set('Cache-Control', 'no-store');
         res.json({ user });
     } catch (error) {
         console.error('Profile error:', error);
@@ -154,7 +156,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
 router.get('/me', authenticateToken, async (req, res) => {
     try {
         const user = await db.get(
-            'SELECT id, username, nickname, email, birth_date, gender, profile_image_url, created_at FROM users WHERE id = ?',
+            'SELECT id, username, nickname, email, birth_date, gender, profile_image_url, is_admin, created_at FROM users WHERE id = ?',
             [req.user.id]
         );
 
@@ -162,6 +164,7 @@ router.get('/me', authenticateToken, async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
+        res.set('Cache-Control', 'no-store');
         res.json(user);
     } catch (error) {
         console.error('Me error:', error);
